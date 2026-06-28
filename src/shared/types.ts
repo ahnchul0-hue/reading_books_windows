@@ -21,9 +21,9 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'light',
+  theme: 'dark', // v2: 기본 어둡게
   fontPt: 24,
-  linesPerPage: 5,
+  linesPerPage: 4, // v2: 기본 4줄
   speedMult: 1.0,
   timerMin: 10,
 }

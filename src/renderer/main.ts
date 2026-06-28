@@ -18,5 +18,5 @@ const nav: Nav = {
 
 const ctx: AppContext = { root, api: window.api, state, nav }
 
-applyTheme('light')
+applyTheme('dark') // v2: 기본 어둡게
 nav.toProfile()
