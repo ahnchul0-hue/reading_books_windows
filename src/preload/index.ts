@@ -25,6 +25,7 @@ const api: Api = {
       ipcRenderer.invoke(IPC.sessionStart, profileId, textId, settingsJson),
     finish: (id: number, progress: SessionProgress) =>
       ipcRenderer.invoke(IPC.sessionFinish, id, progress),
+    recent: (profileId: number) => ipcRenderer.invoke(IPC.sessionRecent, profileId),
   },
   quotes: {
     next: (profileId: number) => ipcRenderer.invoke(IPC.quotesNext, profileId),

@@ -24,6 +24,7 @@ export function makeService(repos: Repos) {
       start: (profileId: number, textId: number | null, settingsJson: string) =>
         repos.sessions.start(profileId, textId, settingsJson),
       finish: (id: number, progress: SessionProgress) => repos.sessions.finish(id, progress),
+      recent: (profileId: number) => repos.sessions.listByProfile(profileId),
     },
     quotes: {
       next: (profileId: number) => repos.quotes.next(profileId),

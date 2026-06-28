@@ -22,7 +22,8 @@ export interface AppState {
 }
 
 export interface Nav {
-  toProfile(): void
+  toProfile(): void // 홈(사용자 선택)
+  toDashboard(): void // 사용자 대시보드
   toStart(): void
   toReading(): void
   toEnd(): void

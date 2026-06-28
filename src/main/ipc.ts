@@ -38,6 +38,7 @@ export function registerIpc(service: Service): void {
   ipcMain.handle(IPC.sessionFinish, (_e, id: number, p: SessionProgress) =>
     service.session.finish(id, p),
   )
+  ipcMain.handle(IPC.sessionRecent, (_e, profileId: number) => service.session.recent(profileId))
 
   ipcMain.handle(IPC.quotesNext, (_e, profileId: number) => service.quotes.next(profileId))
 }

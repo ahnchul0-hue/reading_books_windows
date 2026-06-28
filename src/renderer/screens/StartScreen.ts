@@ -23,7 +23,7 @@ export async function renderStartScreen(ctx: AppContext): Promise<void> {
     <section class="screen">
       <div class="row-between">
         <h1>${profile.avatar ?? '🙂'} ${escapeHtml(profile.name)}</h1>
-        <button class="btn" id="back">친구 바꾸기</button>
+        <button class="btn" id="back">← 대시보드</button>
       </div>
 
       <h2>무엇을 읽을까요?</h2>
@@ -146,7 +146,7 @@ export async function renderStartScreen(ctx: AppContext): Promise<void> {
   }))
 
   // 시작
-  ;(root.querySelector('#back') as HTMLElement).addEventListener('click', () => nav.toProfile())
+  ;(root.querySelector('#back') as HTMLElement).addEventListener('click', () => nav.toDashboard())
   startBtn.addEventListener('click', () => {
     const body = selected ? selected.body : normalizeText(bodyEl.value)
     if (!body) return

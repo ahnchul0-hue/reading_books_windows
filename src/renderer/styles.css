@@ -125,3 +125,49 @@ input[type="text"] {
 
 .end-summary { display: flex; flex-direction: column; gap: 0.6rem; font-size: 1.2rem; }
 .big { font-size: 1.6rem; font-weight: 700; }
+
+/* 대시보드 */
+.panel {
+  background: var(--panel); border-radius: 16px; padding: 1rem 1.2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+}
+.panel-title { font-weight: 700; margin-bottom: 0.6rem; }
+.dash-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.stat {
+  background: var(--panel); border-radius: 16px; padding: 1rem; text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+}
+.stat-num { font-size: 2rem; font-weight: 800; }
+.stat-num .unit { font-size: 1rem; font-weight: 600; color: var(--muted); margin-left: 2px; }
+.stat-lbl { color: var(--muted); margin-top: 0.2rem; }
+.cheer { font-size: 1.15rem; }
+
+/* 월별 캘린더 (작게) */
+.cal { display: flex; flex-direction: column; gap: 4px; max-width: 360px; }
+.cal-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-cell {
+  aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; border-radius: 8px; color: var(--fg);
+  background: rgba(127,127,127,0.10); /* 안 한 날: 빈칸 느낌 */
+}
+.cal-head .cal-cell { background: transparent; color: var(--muted); font-weight: 700; }
+.cal-cell.empty { background: transparent; }
+.cal-cell.done { background: var(--accent); color: #fff; font-weight: 700; } /* 한 날: 채움 */
+.cal-cell.today { outline: 2px solid rgba(var(--sweep), 0.9); outline-offset: -2px; }
+
+/* 저장된 글 아이콘 그리드 */
+.text-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem; }
+.text-card { cursor: pointer; display: flex; flex-direction: column; gap: 0.4rem; }
+.text-thumb {
+  height: 120px; padding: 0.6rem; border-radius: 12px; overflow: hidden;
+  background: var(--panel); border: 2px solid transparent;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18); font-size: 0.8rem; line-height: 1.4;
+  color: var(--muted); white-space: pre-wrap;
+}
+.text-card:hover .text-thumb { border-color: var(--accent); }
+.text-title { font-weight: 700; text-align: center; font-size: 0.95rem; }
+
+/* 옵션 세로 스테퍼 (Phase D) */
+.stepper { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.stepper .val { font-size: 1.1rem; font-weight: 700; min-width: 4.5rem; text-align: center; }
+.stepper button { width: 2.4rem; height: 2rem; font-size: 1.2rem; }

@@ -1,6 +1,6 @@
 // main ↔ renderer IPC 계약 (Architect 소유)
 // preload(invoke)와 main(handle)이 같은 채널 문자열·타입을 공유한다.
-import type { Profile, Settings, TextItem, SessionProgress, Quote } from './types'
+import type { Profile, Settings, TextItem, SessionProgress, SessionRecord, Quote } from './types'
 
 /** IPC 채널 이름. preload와 ipc.ts가 함께 참조. */
 export const IPC = {
@@ -14,6 +14,7 @@ export const IPC = {
   settingsSet: 'settings:set',
   sessionStart: 'session:start',
   sessionFinish: 'session:finish',
+  sessionRecent: 'session:recent',
   quotesNext: 'quotes:next',
 } as const
 
@@ -36,6 +37,7 @@ export interface Api {
   session: {
     start(profileId: number, textId: number | null, settingsJson: string): Promise<number>
     finish(id: number, progress: SessionProgress): Promise<void>
+    recent(profileId: number): Promise<SessionRecord[]>
   }
   quotes: {
     next(profileId: number): Promise<Quote>
