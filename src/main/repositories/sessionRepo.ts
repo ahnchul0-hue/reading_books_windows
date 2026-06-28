@@ -1,5 +1,5 @@
 import type { Db } from '../db'
-import type { SessionRecord } from '../../shared/types'
+import type { SessionRecord, SessionProgress } from '../../shared/types'
 
 function rowToSession(r: any): SessionRecord {
   return {
@@ -13,12 +13,6 @@ function rowToSession(r: any): SessionRecord {
     pageReached: r.page_reached,
     settingsJson: r.settings_json,
   }
-}
-
-export interface SessionProgress {
-  activeMs: number
-  charsRead: number
-  pageReached: number
 }
 
 export function makeSessionRepo(db: Db) {

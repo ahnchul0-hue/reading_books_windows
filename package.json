@@ -13,6 +13,8 @@
     "start": "npm run build && electron .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "rebuild:electron": "electron-builder install-app-deps",
+    "rebuild:node": "npm rebuild better-sqlite3",
     "dist": "npm run build && electron-builder"
   },
   "devDependencies": {

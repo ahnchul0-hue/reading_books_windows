@@ -1,5 +1,9 @@
 import { app, BrowserWindow } from 'electron'
 import { join } from 'node:path'
+import { createDb } from './db'
+import { makeRepos } from './repositories'
+import { makeService } from './service'
+import { registerIpc } from './ipc'
 
 function createWindow(): void {
   const win = new BrowserWindow({
@@ -18,6 +22,12 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // 프로필·글·세션·명언을 사용자 데이터 폴더의 SQLite에 보관(완전 로컬 — D10).
+  const db = createDb(join(app.getPath('userData'), 'reading-trainer.db'))
+  const service = makeService(makeRepos(db))
+  registerIpc(service)
+  console.log('[reading-trainer] db ready, ipc registered')
+
   createWindow()
 
   app.on('activate', () => {
