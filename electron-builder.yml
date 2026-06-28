@@ -6,6 +6,9 @@ directories:
 files:
   - dist/**/*
   - package.json
+# 네이티브 모듈은 asar에서 풀어야 런타임 로드 가능
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**"
 extraResources:
   - from: data
     to: data
