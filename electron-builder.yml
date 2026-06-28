@@ -6,6 +6,9 @@ directories:
 files:
   - dist/**/*
   - package.json
+extraResources:
+  - from: data
+    to: data
 win:
   target:
     - nsis
