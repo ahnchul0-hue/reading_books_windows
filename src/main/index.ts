@@ -18,6 +18,14 @@ function createWindow(): void {
     },
   })
 
+  win.webContents.on('did-finish-load', () => console.log('[reading-trainer] renderer loaded'))
+  win.webContents.on('console-message', (_e, level, message) => {
+    if (level >= 2) console.error('[renderer]', message)
+  })
+  win.webContents.on('render-process-gone', (_e, d) =>
+    console.error('[reading-trainer] renderer gone:', d.reason),
+  )
+
   win.loadFile(join(__dirname, '../renderer/index.html'))
 }
 
