@@ -1,11 +1,12 @@
 import type { Quote } from '../../shared/types'
-import { BREAK_MS, breakRemainingMs, createBreak, isBreakOver, tickBreak } from '../../core/breakScheduler'
+import { BREAK_MS } from '../../core/breakScheduler'
 
 /**
- * 강제 휴식 오버레이를 띄우고 20초 카운트다운을 진행한다(스킵 불가).
+ * 강제 휴식 오버레이를 띄우고 카운트다운을 진행한다(스킵 불가 — 버튼 없음).
  * 읽기 화면 위에 덮으며, 끝나면 스스로 사라지고 resolve된다.
+ * @param durationMs 휴식 길이(기본 20초). 테스트에서 단축 주입 가능.
  */
-export function showBreak(quote: Quote | null): Promise<void> {
+export function showBreak(quote: Quote | null, durationMs: number = BREAK_MS): Promise<void> {
   return new Promise((resolve) => {
     const overlay = document.createElement('div')
     overlay.className = 'break-overlay'
@@ -18,28 +19,25 @@ export function showBreak(quote: Quote | null): Promise<void> {
     const countEl = overlay.querySelector('.break-count') as HTMLElement
     document.body.appendChild(overlay)
 
-    let b = createBreak()
+    let remaining = durationMs
     let last = 0
     const draw = (): void => {
-      const sec = Math.ceil(breakRemainingMs(b) / 1000)
-      countEl.textContent = `${sec}초 후에 다시 시작해요`
+      countEl.textContent = `${Math.max(0, Math.ceil(remaining / 1000))}초 후에 다시 시작해요`
     }
     draw()
 
     const frame = (now: number): void => {
       if (last === 0) last = now
-      b = tickBreak(b, now - last)
+      remaining -= now - last
       last = now
       draw()
-      if (isBreakOver(b)) {
+      if (remaining <= 0) {
         overlay.remove()
         resolve()
         return
       }
       requestAnimationFrame(frame)
     }
-    // 최소 BREAK_MS 보장(스킵 버튼 없음)
-    void BREAK_MS
     requestAnimationFrame(frame)
   })
 }

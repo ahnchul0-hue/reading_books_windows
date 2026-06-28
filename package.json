@@ -16,9 +16,11 @@
     "test:watch": "vitest",
     "rebuild:electron": "electron-builder install-app-deps",
     "rebuild:node": "npm rebuild better-sqlite3",
+    "test:e2e": "playwright test",
     "dist": "npm run build && electron-builder"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.10.0",
     "electron": "^33.2.1",

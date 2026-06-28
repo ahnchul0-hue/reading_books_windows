@@ -17,8 +17,15 @@ import {
   tick,
   type ClockState,
 } from '../../core/sessionClock'
-import { shouldBreak } from '../../core/breakScheduler'
+import { BREAK_INTERVAL_MS } from '../../core/breakScheduler'
 import { showBreak } from './BreakScreen'
+
+// 테스트 전용 시seam: 설정 시 타이머/휴식 시간을 단축. 미설정이면 실제 값 사용.
+interface RtTest {
+  timerMs?: number
+  breakIntervalMs?: number
+  breakMs?: number
+}
 
 export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   const { root, api, state, nav } = ctx
@@ -29,6 +36,9 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   const profile = state.profile
   const settings = state.settings
   const text = state.text
+  const tcfg: RtTest = (window as unknown as { __rtTest?: RtTest }).__rtTest ?? {}
+  const totalTimerMs = tcfg.timerMs ?? settings.timerMin * 60000
+  const breakIntervalMs = tcfg.breakIntervalMs ?? BREAK_INTERVAL_MS
 
   root.innerHTML = `
     <section class="screen reading">
@@ -68,7 +78,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   pageEl.appendChild(bar)
 
   // 런타임 상태
-  let clock: ClockState = createClock(settings.timerMin * 60000)
+  let clock: ClockState = createClock(totalTimerMs)
   let activeSinceBreak = 0
   let charsRead = 0
   let pageReached = 1
@@ -155,7 +165,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
     } catch {
       quote = null
     }
-    await showBreak(quote)
+    await showBreak(quote, tcfg.breakMs)
     if (phase !== 'break') return // 도중 종료된 경우
     activeSinceBreak = 0
     phase = 'reading'
@@ -205,7 +215,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
       void endSession()
       return
     }
-    if (shouldBreak(activeSinceBreak)) {
+    if (activeSinceBreak >= breakIntervalMs) {
       void startBreak()
       return
     }
