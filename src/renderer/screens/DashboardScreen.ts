@@ -2,6 +2,7 @@ import type { AppContext } from '../context'
 import type { Category, TextItem, LeaderRow } from '../../shared/types'
 import { activeDateSet, computeStreak, monthlyCalendar, lastNDaysMinutes } from '../../core/stats'
 import { normalizeText } from '../../core/text'
+import { showOptionsPopup } from '../optionsPopup'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -231,9 +232,12 @@ function renderTexts(
     title.className = 'text-title'
     title.textContent = t.title || '(제목 없음)'
     card.append(thumb, title)
-    card.addEventListener('click', () => {
+    card.addEventListener('click', async () => {
       state.text = { id: t.id, title: t.title, body: t.body }
-      nav.toStart()
+      state.queue = []
+      state.resumeChars = 0
+      const go = await showOptionsPopup(ctx)
+      if (go) nav.toReading()
     })
     grid.appendChild(card)
   }

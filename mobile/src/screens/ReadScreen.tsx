@@ -1,19 +1,55 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native'
-import { api, COLORS, type TextRow } from '../api'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native'
+import { api, COLORS, type TextRow, type ReadOpts } from '../api'
 import type { Nav } from '../../App'
 
 const countable = (s: string) => [...s].filter((c) => !/\s/.test(c)).length
-const MS_PER_CHAR = 150 // 1.0배 = 분당 400자
 
-export function ReadScreen({ nav, text }: { nav: Nav; text: TextRow }) {
-  const chunks = text.body.split(/(?<=[.?!…])\s+/).filter((c) => c.trim().length > 0)
+// 글을 화면 폭에 맞춰 줄로 나눔(어절 경계, 공백 제외 글자수 기준)
+function wrap(text: string, maxChars: number): string[] {
+  const out: string[] = []
+  for (const para of text.split('\n')) {
+    const words = para.split(/\s+/).filter(Boolean)
+    if (!words.length) continue
+    let cur: string[] = []
+    let n = 0
+    for (const w of words) {
+      const wl = countable(w)
+      if (cur.length && n + wl > maxChars) {
+        out.push(cur.join(' '))
+        cur = []
+        n = 0
+      }
+      cur.push(w)
+      n += wl
+    }
+    if (cur.length) out.push(cur.join(' '))
+  }
+  return out
+}
+
+export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts: ReadOpts }) {
+  const fontSize = opts.fontSize
+  const lineH = Math.round(fontSize * 1.9)
+  const charW = fontSize // 한글 한 글자 폭 근사
+  const barW = 2 * charW // 약 2글자
+  const msPerChar = 60000 / (400 * opts.speedMult)
+
+  const [cw, setCw] = useState(0)
+  const lines = useMemo(
+    () => (cw ? wrap(text.body, Math.max(4, Math.floor((cw - 32) / charW))) : []),
+    [cw, charW, text.body],
+  )
   const [idx, setIdx] = useState(0)
   const [playing, setPlaying] = useState(true)
   const [done, setDone] = useState(false)
-  const startedAt = useRef(new Date().toISOString())
+
+  const barX = useRef(new Animated.Value(0)).current
+  const anim = useRef<Animated.CompositeAnimation | null>(null)
   const activeMs = useRef(0)
   const charsRead = useRef(0)
+  const startedAt = useRef(new Date().toISOString())
+  const scrollRef = useRef<ScrollView>(null)
 
   const finish = async () => {
     setDone(true)
@@ -30,20 +66,26 @@ export function ReadScreen({ nav, text }: { nav: Nav; text: TextRow }) {
   }
 
   useEffect(() => {
-    if (!playing || done) return
-    if (idx >= chunks.length) {
+    if (!playing || done || lines.length === 0 || cw === 0) return
+    if (idx >= lines.length) {
       void finish()
       return
     }
-    const dur = countable(chunks[idx]) * MS_PER_CHAR + 300
-    const t = setTimeout(() => {
-      activeMs.current += dur
-      charsRead.current += countable(chunks[idx])
-      setIdx((i) => i + 1)
-    }, dur)
-    return () => clearTimeout(t)
+    scrollRef.current?.scrollTo({ y: Math.max(0, idx * lineH - lineH), animated: true })
+    barX.setValue(0)
+    const dur = Math.max(400, countable(lines[idx]) * msPerChar)
+    const range = Math.max(0, cw - 32 - barW)
+    anim.current = Animated.timing(barX, { toValue: range, duration: dur, useNativeDriver: true })
+    anim.current.start(({ finished }) => {
+      if (finished) {
+        activeMs.current += dur
+        charsRead.current += countable(lines[idx])
+        setIdx((i) => i + 1)
+      }
+    })
+    return () => anim.current?.stop()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, playing, done])
+  }, [idx, playing, lines.length, cw])
 
   if (done) {
     return (
@@ -63,21 +105,33 @@ export function ReadScreen({ nav, text }: { nav: Nav; text: TextRow }) {
     <View style={s.wrap}>
       <View style={s.topRow}>
         <Text style={s.muted}>
-          {Math.min(idx + 1, chunks.length)} / {chunks.length}
+          {Math.min(idx + 1, lines.length || 1)} / {lines.length || '…'} 줄
         </Text>
         <TouchableOpacity onPress={() => nav.toHome()}>
           <Text style={s.muted}>끝내기</Text>
         </TouchableOpacity>
       </View>
-      <ScrollView style={s.box} contentContainerStyle={{ padding: 16 }}>
-        <Text style={s.bodyText}>
-          {chunks.map((c, i) => (
-            <Text key={i} style={i === idx ? s.cur : s.dim}>
-              {c}{' '}
-            </Text>
+
+      <View style={s.box} onLayout={(e) => setCw(e.nativeEvent.layout.width)}>
+        <ScrollView ref={scrollRef} contentContainerStyle={{ padding: 16 }}>
+          {lines.map((ln, i) => (
+            <View key={i} style={[s.lineRow, { height: lineH }, i === idx && s.lineCur]}>
+              <Text style={{ fontSize, lineHeight: lineH, color: i <= idx ? COLORS.fg : COLORS.muted }}>
+                {ln}
+              </Text>
+              {i === idx && (
+                <Animated.View
+                  style={[
+                    s.bar,
+                    { width: barW, height: lineH, transform: [{ translateX: barX }] },
+                  ]}
+                />
+              )}
+            </View>
           ))}
-        </Text>
-      </ScrollView>
+        </ScrollView>
+      </View>
+
       <TouchableOpacity style={[s.btn, s.primary]} onPress={() => setPlaying((p) => !p)}>
         <Text style={[s.btnT, { color: '#fff' }]}>{playing ? '⏸ 잠깐 멈춤' : '▶ 계속'}</Text>
       </TouchableOpacity>
@@ -90,10 +144,10 @@ const s = StyleSheet.create({
   topRow: { flexDirection: 'row', justifyContent: 'space-between' },
   h1: { color: COLORS.fg, fontSize: 26, fontWeight: '800' },
   muted: { color: COLORS.muted, fontSize: 15 },
-  box: { flex: 1, backgroundColor: COLORS.panel, borderRadius: 16 },
-  bodyText: { fontSize: 26, lineHeight: 44 },
-  cur: { color: COLORS.fg, backgroundColor: 'rgba(240,198,116,0.35)' },
-  dim: { color: COLORS.muted },
+  box: { flex: 1, backgroundColor: COLORS.panel, borderRadius: 16, borderWidth: 2, borderColor: '#3a4256' },
+  lineRow: { position: 'relative', justifyContent: 'center' },
+  lineCur: { backgroundColor: 'rgba(127,127,127,0.16)', borderRadius: 8 }, // 현재 줄 배경(은은)
+  bar: { position: 'absolute', left: 0, top: 0, backgroundColor: 'rgba(240,198,116,0.5)', borderRadius: 4 },
   btn: { backgroundColor: COLORS.panel, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
   btnT: { color: COLORS.fg, fontSize: 17, fontWeight: '800' },
   primary: { backgroundColor: COLORS.accent },

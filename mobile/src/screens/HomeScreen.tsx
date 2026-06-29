@@ -8,7 +8,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native'
-import { api, COLORS, type CloudUser, type LeaderRow, type TextRow } from '../api'
+import { api, COLORS, type CloudUser, type LeaderRow, type TextRow, type ReadOpts } from '../api'
 import type { Nav } from '../../App'
 
 const METRICS = [
@@ -26,6 +26,10 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  // 읽기 옵션 팝업
+  const [optText, setOptText] = useState<TextRow | null>(null)
+  const [speed, setSpeed] = useState(1.0)
+  const [font, setFont] = useState(28)
 
   const load = async () => {
     try {
@@ -124,13 +128,61 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
       </View>
       {texts.length === 0 && <Text style={s.muted}>저장된 글이 없어요.</Text>}
       {texts.map((t) => (
-        <TouchableOpacity key={t.id} style={s.textRow} onPress={() => nav.toRead(t)}>
+        <TouchableOpacity key={t.id} style={s.textRow} onPress={() => setOptText(t)}>
           <Text style={s.textTitle}>{t.title || '(제목 없음)'}</Text>
           <Text style={s.muted} numberOfLines={1}>
             {t.body.slice(0, 40)}
           </Text>
         </TouchableOpacity>
       ))}
+
+      {/* 읽기 옵션 팝업 */}
+      <Modal visible={!!optText} transparent animationType="fade" onRequestClose={() => setOptText(null)}>
+        <View style={s.overlay}>
+          <View style={s.modalBox}>
+            <Text style={s.h2}>📖 {optText?.title || '읽기'}</Text>
+            <Text style={s.muted}>어떻게 읽을까요?</Text>
+            <Text style={s.optLabel}>속도</Text>
+            <View style={s.chips}>
+              {[0.5, 1.0, 1.5, 2.0].map((v) => (
+                <TouchableOpacity
+                  key={v}
+                  style={[s.chip, speed === v && s.chipSel]}
+                  onPress={() => setSpeed(v)}
+                >
+                  <Text style={[s.chipT, speed === v && { color: '#fff' }]}>{v.toFixed(1)}×</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={s.optLabel}>글자 크기</Text>
+            <View style={s.row}>
+              <TouchableOpacity style={s.btn} onPress={() => setFont((f) => Math.max(20, f - 2))}>
+                <Text style={s.btnT}>－</Text>
+              </TouchableOpacity>
+              <Text style={[s.btnT, { minWidth: 64, textAlign: 'center' }]}>{font}pt</Text>
+              <TouchableOpacity style={s.btn} onPress={() => setFont((f) => Math.min(44, f + 2))}>
+                <Text style={s.btnT}>＋</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={[s.row, { justifyContent: 'flex-end' }]}>
+              <TouchableOpacity style={s.btn} onPress={() => setOptText(null)}>
+                <Text style={s.btnT}>취소</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[s.btn, s.primary]}
+                onPress={() => {
+                  const t = optText!
+                  setOptText(null)
+                  const o: ReadOpts = { speedMult: speed, fontSize: font }
+                  nav.toRead(t, o)
+                }}
+              >
+                <Text style={[s.btnT, { color: '#fff' }]}>시작 ▶</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
 
       <Modal visible={adding} transparent animationType="slide" onRequestClose={() => setAdding(false)}>
         <View style={s.overlay}>
@@ -219,4 +271,5 @@ const s = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
   modalBox: { backgroundColor: COLORS.panel, borderRadius: 20, padding: 24, gap: 14, width: 380 },
   input: { backgroundColor: COLORS.bg, color: COLORS.fg, borderRadius: 12, padding: 14, fontSize: 16 },
+  optLabel: { color: COLORS.muted, fontSize: 14, fontWeight: '700', marginTop: 4 },
 })

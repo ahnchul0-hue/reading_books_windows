@@ -88,7 +88,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   pageEl.appendChild(lineHi)
   const bar = document.createElement('div')
   bar.className = 'sweep-bar'
-  let barWidth = 1.5 * charWidthPx // 글자폭 1.5배
+  let barWidth = 2 * charWidthPx // 글자폭 2배(약 2글자)
   bar.style.width = `${barWidth}px`
   pageEl.appendChild(bar)
 

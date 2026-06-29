@@ -16,6 +16,7 @@ export type LeaderRow = {
   completedCount: number
 }
 export type TextRow = { id: number; title: string; body: string; category: string | null }
+export type ReadOpts = { speedMult: number; fontSize: number }
 
 export async function getUrl(): Promise<string> {
   return (await AsyncStorage.getItem(KEY)) || DEFAULT_URL
