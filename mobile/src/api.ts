@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-// 기본 서버 주소(같은 와이파이의 PC). 설정 화면에서 바꿀 수 있음.
-const DEFAULT_URL = 'http://192.168.1.200:4000'
+// 기본 서버 주소(공개 도메인). 설정 화면에서 바꿀 수 있음.
+const DEFAULT_URL = 'https://reading.metabiz.kr'
 const KEY = 'serverUrl'
 let token: string | null = null
 

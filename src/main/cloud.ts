@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { readFileSync, writeFileSync } from 'node:fs'
 import type { CloudAuth, CloudSession, CloudUser, LeaderRow } from '../shared/types'
 
-const DEFAULT_URL = 'http://localhost:4000'
+const DEFAULT_URL = 'https://reading.metabiz.kr'
 
 function configPath(): string {
   return join(app.getPath('userData'), 'cloud-config.json')
