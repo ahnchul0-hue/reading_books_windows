@@ -28,12 +28,22 @@ export const DEFAULT_SETTINGS: Settings = {
   timerMin: 10,
 }
 
+export interface Category {
+  id: number
+  name: string
+  emoji: string
+  color: string
+  builtin: boolean
+}
+
 export interface TextItem {
   id: number
   profileId: number
   title: string
   body: string // 줄바꿈 정규화된 본문(\n)
   createdAt: string
+  categoryId: number | null
+  category: Category | null
 }
 
 export interface SessionRecord {

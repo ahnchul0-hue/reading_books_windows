@@ -4,6 +4,7 @@ import { makeTextRepo } from './textRepo'
 import { makeSessionRepo } from './sessionRepo'
 import { makeQuoteRepo } from './quoteRepo'
 import { makeReadingStateRepo } from './readingStateRepo'
+import { makeCategoryRepo } from './categoryRepo'
 
 export function makeRepos(db: Db) {
   return {
@@ -12,6 +13,7 @@ export function makeRepos(db: Db) {
     sessions: makeSessionRepo(db),
     quotes: makeQuoteRepo(db),
     readingState: makeReadingStateRepo(db),
+    categories: makeCategoryRepo(db),
   }
 }
 

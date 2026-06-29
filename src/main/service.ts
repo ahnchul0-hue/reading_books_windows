@@ -13,8 +13,13 @@ export function makeService(repos: Repos) {
     },
     texts: {
       list: (profileId: number) => repos.texts.list(profileId),
-      save: (profileId: number, title: string, body: string) =>
-        repos.texts.save(profileId, title, body),
+      save: (profileId: number, title: string, body: string, categoryId?: number) =>
+        repos.texts.save(profileId, title, body, categoryId),
+    },
+    categories: {
+      list: () => repos.categories.list(),
+      add: (name: string, emoji: string, color: string) => repos.categories.add(name, emoji, color),
+      remove: (id: number) => repos.categories.remove(id),
     },
     settings: {
       get: (profileId: number) => repos.profiles.getSettings(profileId),

@@ -4,6 +4,7 @@ import type {
   Profile,
   Settings,
   TextItem,
+  Category,
   SessionProgress,
   SessionRecord,
   ReadingState,
@@ -18,6 +19,9 @@ export const IPC = {
   textsList: 'texts:list',
   textsSave: 'texts:save',
   textsImport: 'texts:importTxt',
+  categoriesList: 'categories:list',
+  categoriesAdd: 'categories:add',
+  categoriesRemove: 'categories:remove',
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
   sessionStart: 'session:start',
@@ -38,8 +42,13 @@ export interface Api {
   }
   texts: {
     list(profileId: number): Promise<TextItem[]>
-    save(profileId: number, title: string, body: string): Promise<TextItem>
+    save(profileId: number, title: string, body: string, categoryId?: number): Promise<TextItem>
     importTxt(): Promise<{ title: string; body: string } | null>
+  }
+  categories: {
+    list(): Promise<Category[]>
+    add(name: string, emoji: string, color: string): Promise<Category>
+    remove(id: number): Promise<void>
   }
   settings: {
     get(profileId: number): Promise<Settings>

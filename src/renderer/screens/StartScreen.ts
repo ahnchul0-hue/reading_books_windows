@@ -77,7 +77,8 @@ function renderNew(ctx: AppContext, host: HTMLElement, texts: TextItem[]): void 
     for (const t of texts) {
       const item = document.createElement('div')
       item.className = 'list-item' + (t.id === primaryId ? ' selected' : '')
-      item.textContent = t.title || '(제목 없음)'
+      item.textContent = `${t.category?.emoji ?? ''} ${t.title || '(제목 없음)'}`.trim()
+      if (t.category?.color) item.style.borderLeft = `5px solid ${t.category.color}`
       item.addEventListener('click', () => {
         primaryId = t.id
         queue.delete(t.id)

@@ -14,9 +14,16 @@ export function registerIpc(service: Service): void {
   ipcMain.handle(IPC.profilesRemove, (_e, id: number) => service.profiles.remove(id))
 
   ipcMain.handle(IPC.textsList, (_e, profileId: number) => service.texts.list(profileId))
-  ipcMain.handle(IPC.textsSave, (_e, profileId: number, title: string, body: string) =>
-    service.texts.save(profileId, title, body),
+  ipcMain.handle(
+    IPC.textsSave,
+    (_e, profileId: number, title: string, body: string, categoryId?: number) =>
+      service.texts.save(profileId, title, body, categoryId),
   )
+  ipcMain.handle(IPC.categoriesList, () => service.categories.list())
+  ipcMain.handle(IPC.categoriesAdd, (_e, name: string, emoji: string, color: string) =>
+    service.categories.add(name, emoji, color),
+  )
+  ipcMain.handle(IPC.categoriesRemove, (_e, id: number) => service.categories.remove(id))
   ipcMain.handle(IPC.textsImport, async () => {
     const r = await dialog.showOpenDialog({
       properties: ['openFile'],

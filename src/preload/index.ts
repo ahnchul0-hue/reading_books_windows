@@ -12,9 +12,15 @@ const api: Api = {
   },
   texts: {
     list: (profileId: number) => ipcRenderer.invoke(IPC.textsList, profileId),
-    save: (profileId: number, title: string, body: string) =>
-      ipcRenderer.invoke(IPC.textsSave, profileId, title, body),
+    save: (profileId: number, title: string, body: string, categoryId?: number) =>
+      ipcRenderer.invoke(IPC.textsSave, profileId, title, body, categoryId),
     importTxt: () => ipcRenderer.invoke(IPC.textsImport),
+  },
+  categories: {
+    list: () => ipcRenderer.invoke(IPC.categoriesList),
+    add: (name: string, emoji: string, color: string) =>
+      ipcRenderer.invoke(IPC.categoriesAdd, name, emoji, color),
+    remove: (id: number) => ipcRenderer.invoke(IPC.categoriesRemove, id),
   },
   settings: {
     get: (profileId: number) => ipcRenderer.invoke(IPC.settingsGet, profileId),
