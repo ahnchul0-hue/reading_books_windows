@@ -21,11 +21,19 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  theme: 'light',
+  theme: 'dark', // v2: 기본 어둡게
   fontPt: 24,
-  linesPerPage: 5,
+  linesPerPage: 4, // v2: 기본 4줄
   speedMult: 1.0,
   timerMin: 10,
+}
+
+export interface Category {
+  id: number
+  name: string
+  emoji: string
+  color: string
+  builtin: boolean
 }
 
 export interface TextItem {
@@ -34,6 +42,8 @@ export interface TextItem {
   title: string
   body: string // 줄바꿈 정규화된 본문(\n)
   createdAt: string
+  categoryId: number | null
+  category: Category | null
 }
 
 export interface SessionRecord {
@@ -52,6 +62,13 @@ export interface SessionProgress {
   activeMs: number
   charsRead: number
   pageReached: number
+}
+
+// 이어읽기용 재개 지점 (레이아웃 비의존: 읽은 글자수 기준)
+export interface ReadingState {
+  textId: number | null
+  charsRead: number // 현재 글에서 읽은 공백제외 글자수
+  finished: boolean
 }
 
 // 명언 타입은 순수 코어(core/quotes)에서 정의한 것을 재사용한다.

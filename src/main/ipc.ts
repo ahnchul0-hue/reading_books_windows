@@ -2,7 +2,7 @@
 import { ipcMain, dialog } from 'electron'
 import { readFileSync } from 'node:fs'
 import { IPC } from '../shared/ipc-contract'
-import type { Settings, SessionProgress } from '../shared/types'
+import type { Settings, SessionProgress, ReadingState } from '../shared/types'
 import type { Service } from './service'
 import { parseTxt } from './importTxt'
 
@@ -14,9 +14,16 @@ export function registerIpc(service: Service): void {
   ipcMain.handle(IPC.profilesRemove, (_e, id: number) => service.profiles.remove(id))
 
   ipcMain.handle(IPC.textsList, (_e, profileId: number) => service.texts.list(profileId))
-  ipcMain.handle(IPC.textsSave, (_e, profileId: number, title: string, body: string) =>
-    service.texts.save(profileId, title, body),
+  ipcMain.handle(
+    IPC.textsSave,
+    (_e, profileId: number, title: string, body: string, categoryId?: number) =>
+      service.texts.save(profileId, title, body, categoryId),
   )
+  ipcMain.handle(IPC.categoriesList, () => service.categories.list())
+  ipcMain.handle(IPC.categoriesAdd, (_e, name: string, emoji: string, color: string) =>
+    service.categories.add(name, emoji, color),
+  )
+  ipcMain.handle(IPC.categoriesRemove, (_e, id: number) => service.categories.remove(id))
   ipcMain.handle(IPC.textsImport, async () => {
     const r = await dialog.showOpenDialog({
       properties: ['openFile'],
@@ -38,6 +45,13 @@ export function registerIpc(service: Service): void {
   ipcMain.handle(IPC.sessionFinish, (_e, id: number, p: SessionProgress) =>
     service.session.finish(id, p),
   )
+  ipcMain.handle(IPC.sessionRecent, (_e, profileId: number) => service.session.recent(profileId))
+
+  ipcMain.handle(IPC.stateGet, (_e, profileId: number) => service.state.get(profileId))
+  ipcMain.handle(IPC.stateSave, (_e, profileId: number, s: ReadingState) =>
+    service.state.save(profileId, s),
+  )
+  ipcMain.handle(IPC.stateClear, (_e, profileId: number) => service.state.clear(profileId))
 
   ipcMain.handle(IPC.quotesNext, (_e, profileId: number) => service.quotes.next(profileId))
 }

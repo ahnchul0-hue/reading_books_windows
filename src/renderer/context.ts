@@ -18,11 +18,14 @@ export interface AppState {
   profile?: Profile
   settings?: Settings
   text?: SelectedText
+  queue?: SelectedText[] // 시간 남으면 이어 읽을 다음 글들
+  resumeChars?: number // 이어읽기 시작 글자수(현재 글)
   lastSummary?: SessionSummary
 }
 
 export interface Nav {
-  toProfile(): void
+  toProfile(): void // 홈(사용자 선택)
+  toDashboard(): void // 사용자 대시보드
   toStart(): void
   toReading(): void
   toEnd(): void

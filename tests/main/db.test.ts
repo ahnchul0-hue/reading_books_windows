@@ -20,11 +20,11 @@ describe('db — 마이그레이션 & 무결성', () => {
     db.close()
   })
 
-  it('user_version=1, migrate 재호출은 멱등', () => {
+  it('user_version=3, migrate 재호출은 멱등', () => {
     const db = createDb()
-    expect(db.pragma('user_version', { simple: true })).toBe(1)
+    expect(db.pragma('user_version', { simple: true })).toBe(3)
     migrate(db) // 재호출해도 에러/중복 없음
-    expect(db.pragma('user_version', { simple: true })).toBe(1)
+    expect(db.pragma('user_version', { simple: true })).toBe(3)
     db.close()
   })
 

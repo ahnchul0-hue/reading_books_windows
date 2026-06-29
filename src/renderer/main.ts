@@ -2,6 +2,7 @@ import './styles.css'
 import { applyTheme } from './theme'
 import type { AppContext, AppState, Nav } from './context'
 import { renderProfileScreen } from './screens/ProfileScreen'
+import { renderDashboardScreen } from './screens/DashboardScreen'
 import { renderStartScreen } from './screens/StartScreen'
 import { renderReadingScreen } from './screens/ReadingScreen'
 import { renderEndScreen } from './screens/EndScreen'
@@ -11,6 +12,7 @@ const state: AppState = {}
 
 const nav: Nav = {
   toProfile: () => void renderProfileScreen(ctx),
+  toDashboard: () => void renderDashboardScreen(ctx),
   toStart: () => void renderStartScreen(ctx),
   toReading: () => void renderReadingScreen(ctx),
   toEnd: () => void renderEndScreen(ctx),
@@ -18,5 +20,5 @@ const nav: Nav = {
 
 const ctx: AppContext = { root, api: window.api, state, nav }
 
-applyTheme('light')
+applyTheme('dark') // v2: 기본 어둡게
 nav.toProfile()

@@ -1,7 +1,7 @@
 // contextIsolation 하에서 안전한 API만 노출 (nodeIntegration OFF).
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC, type Api } from '../shared/ipc-contract'
-import type { Settings, SessionProgress } from '../shared/types'
+import type { Settings, SessionProgress, ReadingState } from '../shared/types'
 
 const api: Api = {
   profiles: {
@@ -12,9 +12,15 @@ const api: Api = {
   },
   texts: {
     list: (profileId: number) => ipcRenderer.invoke(IPC.textsList, profileId),
-    save: (profileId: number, title: string, body: string) =>
-      ipcRenderer.invoke(IPC.textsSave, profileId, title, body),
+    save: (profileId: number, title: string, body: string, categoryId?: number) =>
+      ipcRenderer.invoke(IPC.textsSave, profileId, title, body, categoryId),
     importTxt: () => ipcRenderer.invoke(IPC.textsImport),
+  },
+  categories: {
+    list: () => ipcRenderer.invoke(IPC.categoriesList),
+    add: (name: string, emoji: string, color: string) =>
+      ipcRenderer.invoke(IPC.categoriesAdd, name, emoji, color),
+    remove: (id: number) => ipcRenderer.invoke(IPC.categoriesRemove, id),
   },
   settings: {
     get: (profileId: number) => ipcRenderer.invoke(IPC.settingsGet, profileId),
@@ -25,6 +31,12 @@ const api: Api = {
       ipcRenderer.invoke(IPC.sessionStart, profileId, textId, settingsJson),
     finish: (id: number, progress: SessionProgress) =>
       ipcRenderer.invoke(IPC.sessionFinish, id, progress),
+    recent: (profileId: number) => ipcRenderer.invoke(IPC.sessionRecent, profileId),
+  },
+  state: {
+    get: (profileId: number) => ipcRenderer.invoke(IPC.stateGet, profileId),
+    save: (profileId: number, s: ReadingState) => ipcRenderer.invoke(IPC.stateSave, profileId, s),
+    clear: (profileId: number) => ipcRenderer.invoke(IPC.stateClear, profileId),
   },
   quotes: {
     next: (profileId: number) => ipcRenderer.invoke(IPC.quotesNext, profileId),

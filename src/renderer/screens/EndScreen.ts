@@ -18,13 +18,13 @@ export function renderEndScreen(ctx: AppContext): void {
       </div>
       <div class="row">
         <button class="btn btn-primary btn-lg" id="again">다시 읽기</button>
-        <button class="btn" id="start">시작 화면으로</button>
+        <button class="btn" id="dash">대시보드</button>
         <button class="btn" id="profile">친구 바꾸기</button>
       </div>
     </section>`
 
   ;(root.querySelector('#again') as HTMLElement).addEventListener('click', () => nav.toReading())
-  ;(root.querySelector('#start') as HTMLElement).addEventListener('click', () => nav.toStart())
+  ;(root.querySelector('#dash') as HTMLElement).addEventListener('click', () => nav.toDashboard())
   ;(root.querySelector('#profile') as HTMLElement).addEventListener('click', () => nav.toProfile())
 }
 

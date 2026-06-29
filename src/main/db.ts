@@ -65,11 +65,55 @@ export function createDb(filename = ':memory:'): Db {
   return db
 }
 
+// 마이그레이션 0002 — 이어읽기 재개 지점(프로필당 1행)
+const MIGRATION_0002 = `
+CREATE TABLE reading_state (
+  profile_id INTEGER PRIMARY KEY,
+  text_id    INTEGER,
+  chars_read INTEGER DEFAULT 0,
+  finished   INTEGER DEFAULT 0,
+  updated_at TEXT,
+  FOREIGN KEY(profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  FOREIGN KEY(text_id)    REFERENCES texts(id)    ON DELETE SET NULL
+);
+`
+
+// 마이그레이션 0003 — 글 카테고리(색+이모지+이름), 기본 6종 시드 + texts.category_id
+const MIGRATION_0003 = `
+CREATE TABLE categories (
+  id      INTEGER PRIMARY KEY,
+  name    TEXT NOT NULL,
+  emoji   TEXT,
+  color   TEXT,
+  builtin INTEGER DEFAULT 0,
+  sort    INTEGER DEFAULT 0
+);
+INSERT INTO categories(id, name, emoji, color, builtin, sort) VALUES
+  (1, '동화',    '📖', '#a78bfa', 1, 1),
+  (2, '과학',    '🔬', '#34d399', 1, 2),
+  (3, '동물',    '🐾', '#fb923c', 1, 3),
+  (4, '역사',    '🏰', '#d4a373', 1, 4),
+  (5, '시·노래', '🎵', '#f472b6', 1, 5),
+  (6, '내 글',   '✏️', '#60a5fa', 1, 6);
+ALTER TABLE texts ADD COLUMN category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL;
+`
+
+// 기본 "내 글" 카테고리 id
+export const DEFAULT_CATEGORY_ID = 6
+
 /** user_version으로 누적 마이그레이션. 이미 적용됐으면 건너뛴다(멱등). */
 export function migrate(db: Db): void {
   const version = db.pragma('user_version', { simple: true }) as number
   if (version < 1) {
     db.exec(MIGRATION_0001)
     db.pragma('user_version = 1')
+  }
+  if (version < 2) {
+    db.exec(MIGRATION_0002)
+    db.pragma('user_version = 2')
+  }
+  if (version < 3) {
+    db.exec(MIGRATION_0003)
+    db.pragma('user_version = 3')
   }
 }

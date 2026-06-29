@@ -10,12 +10,23 @@ export async function renderProfileScreen(ctx: AppContext): Promise<void> {
 
   root.innerHTML = `
     <section class="screen">
-      <h1>누구인가요?</h1>
-      <p class="muted">별명과 그림으로 친구를 구분해요. 모든 기록은 이 컴퓨터에만 저장되고 밖으로 나가지 않아요.</p>
+      <div class="row-between">
+        <h1>📖 읽기 친구들</h1>
+        <button class="btn btn-primary" id="add">＋ 새 사용자</button>
+      </div>
+      <p class="muted">친구를 골라 시작해요. 모든 기록은 이 컴퓨터에만 저장돼요.</p>
       <div class="cards" id="cards"></div>
     </section>`
 
   const cards = root.querySelector('#cards') as HTMLElement
+  ;(root.querySelector('#add') as HTMLElement).addEventListener('click', () =>
+    renderNewProfileForm(ctx),
+  )
+
+  if (profiles.length === 0) {
+    cards.innerHTML = `<p class="muted">오른쪽 위 “＋ 새 사용자”로 첫 친구를 만들어요.</p>`
+    return
+  }
 
   for (const p of profiles) {
     const card = document.createElement('div')
@@ -31,7 +42,7 @@ export async function renderProfileScreen(ctx: AppContext): Promise<void> {
       state.profile = p
       state.settings = await api.settings.get(p.id)
       applyTheme(state.settings.theme)
-      nav.toStart()
+      nav.toDashboard()
     })
     ;(card.querySelector('.del') as HTMLElement).addEventListener('click', async (e) => {
       e.stopPropagation()
@@ -42,12 +53,6 @@ export async function renderProfileScreen(ctx: AppContext): Promise<void> {
     })
     cards.appendChild(card)
   }
-
-  const add = document.createElement('div')
-  add.className = 'card'
-  add.innerHTML = `<div class="avatar">➕</div><div class="name">새 친구</div>`
-  add.addEventListener('click', () => renderNewProfileForm(ctx))
-  cards.appendChild(add)
 }
 
 function renderNewProfileForm(ctx: AppContext): void {
