@@ -6,7 +6,7 @@ import {
   buildLineTimeline,
   lineDuration,
   sweepXAt,
-  type Segment,
+  type LineTimeline,
 } from '../../core/sweep'
 import {
   createClock,
@@ -103,7 +103,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   let lineIndex = 0
   let lineElapsedMs = 0
   let currentLineText = ''
-  let timeline: Segment[] = []
+  let timeline: LineTimeline = { totalPx: 0, totalMs: 0, pxPerMs: 0, stops: [] }
   let lineEls: HTMLElement[] = []
   let phase: 'reading' | 'paused' | 'break' | 'ended' = 'reading'
   let raf = 0
