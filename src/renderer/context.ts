@@ -16,6 +16,7 @@ export interface SessionSummary {
 
 export interface AppState {
   profile?: Profile
+  cloudUserId?: number // 로그인된 서버 사용자 id (랭킹의 '나' 식별)
   settings?: Settings
   text?: SelectedText
   queue?: SelectedText[] // 시간 남으면 이어 읽을 다음 글들

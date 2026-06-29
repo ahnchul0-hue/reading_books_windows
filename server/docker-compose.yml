@@ -1,0 +1,16 @@
+services:
+  reading-server:
+    build: .
+    container_name: reading-trainer-server
+    ports:
+      - '4000:4000'
+    environment:
+      - PORT=4000
+      - DB_FILE=/data/reading.db
+      - SERVER_SECRET=change-me-in-production
+    volumes:
+      - reading-data:/data
+    restart: unless-stopped
+
+volumes:
+  reading-data:

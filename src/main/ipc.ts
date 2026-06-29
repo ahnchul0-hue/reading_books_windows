@@ -4,7 +4,9 @@ import { readFileSync } from 'node:fs'
 import { IPC } from '../shared/ipc-contract'
 import type { Settings, SessionProgress, ReadingState } from '../shared/types'
 import type { Service } from './service'
+import type { CloudSession } from '../shared/types'
 import { parseTxt } from './importTxt'
+import { cloud } from './cloud'
 
 export function registerIpc(service: Service): void {
   ipcMain.handle(IPC.profilesList, () => service.profiles.list())
@@ -54,4 +56,20 @@ export function registerIpc(service: Service): void {
   ipcMain.handle(IPC.stateClear, (_e, profileId: number) => service.state.clear(profileId))
 
   ipcMain.handle(IPC.quotesNext, (_e, profileId: number) => service.quotes.next(profileId))
+
+  // 클라우드(서버) 연동
+  ipcMain.handle(IPC.cloudStatus, () => cloud.status())
+  ipcMain.handle(IPC.cloudUrlGet, () => cloud.getUrl())
+  ipcMain.handle(IPC.cloudUrlSet, (_e, url: string) => cloud.setUrl(url))
+  ipcMain.handle(IPC.cloudUsers, () => cloud.usersList())
+  ipcMain.handle(IPC.cloudRegister, (_e, name: string, avatar: string | null, pin: string) =>
+    cloud.register(name, avatar, pin),
+  )
+  ipcMain.handle(IPC.cloudLogin, (_e, userId: number, pin: string) => cloud.login(userId, pin))
+  ipcMain.handle(IPC.cloudLogout, () => cloud.logout())
+  ipcMain.handle(IPC.cloudSaveText, (_e, title: string, body: string, category: string | null) =>
+    cloud.textsSave(title, body, category),
+  )
+  ipcMain.handle(IPC.cloudUploadSession, (_e, s: CloudSession) => cloud.sessionUpload(s))
+  ipcMain.handle(IPC.cloudLeaderboard, () => cloud.leaderboard())
 }
