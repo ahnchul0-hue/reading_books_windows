@@ -8,7 +8,7 @@ import {
   Modal,
   TextInput,
 } from 'react-native'
-import { api, COLORS, type CloudUser, type LeaderRow, type TextRow, type ReadOpts } from '../api'
+import { api, COLORS, type CloudUser, type LeaderRow, type TextRow, type ReadOpts, type Settings } from '../api'
 import type { Nav } from '../../App'
 
 const METRICS = [
@@ -30,6 +30,8 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
   const [optText, setOptText] = useState<TextRow | null>(null)
   const [speed, setSpeed] = useState(1.0)
   const [font, setFont] = useState(28)
+  const [lineSpace, setLineSpace] = useState(1.6)
+  const [baseSettings, setBaseSettings] = useState<Settings | null>(null)
 
   const load = async () => {
     try {
@@ -39,6 +41,15 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
     }
     try {
       setTexts(await api.texts())
+    } catch {
+      /* ignore */
+    }
+    try {
+      const st = await api.getSettings()
+      setBaseSettings(st)
+      setSpeed(st.speedMult)
+      setFont(st.fontPt)
+      setLineSpace(st.lineSpacing)
     } catch {
       /* ignore */
     }
@@ -164,6 +175,16 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
                 <Text style={s.btnT}>＋</Text>
               </TouchableOpacity>
             </View>
+            <Text style={s.optLabel}>줄 간격</Text>
+            <View style={s.row}>
+              <TouchableOpacity style={s.btn} onPress={() => setLineSpace((v) => Math.max(1.2, Math.round((v - 0.2) * 10) / 10))}>
+                <Text style={s.btnT}>－</Text>
+              </TouchableOpacity>
+              <Text style={[s.btnT, { minWidth: 64, textAlign: 'center' }]}>{lineSpace.toFixed(1)}</Text>
+              <TouchableOpacity style={s.btn} onPress={() => setLineSpace((v) => Math.min(2.4, Math.round((v + 0.2) * 10) / 10))}>
+                <Text style={s.btnT}>＋</Text>
+              </TouchableOpacity>
+            </View>
             <View style={[s.row, { justifyContent: 'flex-end' }]}>
               <TouchableOpacity style={s.btn} onPress={() => setOptText(null)}>
                 <Text style={s.btnT}>취소</Text>
@@ -173,7 +194,19 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
                 onPress={() => {
                   const t = optText!
                   setOptText(null)
-                  const o: ReadOpts = { speedMult: speed, fontSize: font }
+                  const o: ReadOpts = { speedMult: speed, fontSize: font, lineSpacing: lineSpace }
+                  // 기본값을 서버에 저장(다음에도 적용)
+                  const base = baseSettings ?? {
+                    theme: 'dark',
+                    fontPt: font,
+                    linesPerPage: 4,
+                    speedMult: speed,
+                    timerMin: 10,
+                    lineSpacing: lineSpace,
+                  }
+                  void api
+                    .saveSettings({ ...base, fontPt: font, speedMult: speed, lineSpacing: lineSpace })
+                    .catch(() => {})
                   nav.toRead(t, o)
                 }}
               >

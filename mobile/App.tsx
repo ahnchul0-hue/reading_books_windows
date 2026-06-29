@@ -7,7 +7,7 @@ import { ServerScreen } from './src/screens/ServerScreen'
 import { HomeScreen } from './src/screens/HomeScreen'
 import { ReadScreen } from './src/screens/ReadScreen'
 
-const DEFAULT_OPTS: ReadOpts = { speedMult: 1.0, fontSize: 28 }
+const DEFAULT_OPTS: ReadOpts = { speedMult: 1.0, fontSize: 28, lineSpacing: 1.6 }
 
 export type Nav = {
   toLogin: () => void

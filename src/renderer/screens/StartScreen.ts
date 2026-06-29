@@ -2,10 +2,12 @@ import type { AppContext, SelectedText } from '../context'
 import type { LinesPerPage, SpeedMult, TextItem, TimerMin } from '../../shared/types'
 import { applyTheme } from '../theme'
 import { saveSettings } from '../settingsSync'
+import { collapsibleStepper, collapsibleToggle } from '../ui'
 
 const LINES: LinesPerPage[] = [3, 4, 5]
 const SPEEDS: SpeedMult[] = [0.5, 1.0, 1.5, 2.0]
 const TIMERS: TimerMin[] = [5, 10, 15, 20]
+const SPACINGS = [1.4, 1.6, 1.8, 2.0, 2.2]
 const FONT_MIN = 24
 const FONT_MAX = 48
 
@@ -170,82 +172,50 @@ function renderOptions(ctx: AppContext, host: HTMLElement): void {
   void profile
 
   host.innerHTML = ''
+  host.className = 'options-col'
   const stepIn = <T,>(arr: readonly T[], cur: T, dir: number): T => {
     const i = arr.indexOf(cur)
     return arr[Math.max(0, Math.min(arr.length - 1, i + dir))]
   }
 
+  // 기본 접힘 — 펼쳐서 선택
   host.appendChild(
-    stepper('한 화면 줄 수', () => `${settings.linesPerPage}줄`, (dir) => {
+    collapsibleStepper('한 화면 줄 수', () => `${settings.linesPerPage}줄`, (dir) => {
       settings.linesPerPage = stepIn(LINES, settings.linesPerPage, dir)
       persist()
     }),
   )
   host.appendChild(
-    stepper('속도', () => `${settings.speedMult.toFixed(1)}×`, (dir) => {
+    collapsibleStepper('속도', () => `${settings.speedMult.toFixed(1)}×`, (dir) => {
       settings.speedMult = stepIn(SPEEDS, settings.speedMult, dir)
       persist()
     }),
   )
   host.appendChild(
-    stepper('시간', () => `${settings.timerMin}분`, (dir) => {
+    collapsibleStepper('시간', () => `${settings.timerMin}분`, (dir) => {
       settings.timerMin = stepIn(TIMERS, settings.timerMin, dir)
       persist()
     }),
   )
   host.appendChild(
-    stepper('글자 크기', () => `${settings.fontPt}pt`, (dir) => {
+    collapsibleStepper('글자 크기', () => `${settings.fontPt}pt`, (dir) => {
       settings.fontPt = Math.max(FONT_MIN, Math.min(FONT_MAX, settings.fontPt + dir * 2))
       persist()
     }),
   )
-
-  // 테마: 변경 버튼(토글)
-  const themeGroup = document.createElement('div')
-  themeGroup.className = 'option-group'
-  themeGroup.innerHTML = `<label>테마</label>`
-  const tbtn = document.createElement('button')
-  tbtn.className = 'btn'
-  const drawTheme = () => (tbtn.textContent = settings.theme === 'dark' ? '🌙 어둡게' : '☀ 밝게')
-  drawTheme()
-  tbtn.addEventListener('click', () => {
-    settings.theme = settings.theme === 'dark' ? 'light' : 'dark'
-    applyTheme(settings.theme)
-    drawTheme()
-    persist()
-  })
-  themeGroup.appendChild(tbtn)
-  host.appendChild(themeGroup)
-}
-
-function stepper(label: string, value: () => string, onStep: (dir: number) => void): HTMLElement {
-  const group = document.createElement('div')
-  group.className = 'option-group'
-  const lab = document.createElement('label')
-  lab.textContent = label
-  const box = document.createElement('div')
-  box.className = 'stepper'
-  const plus = document.createElement('button')
-  plus.className = 'chip'
-  plus.textContent = '+'
-  const val = document.createElement('span')
-  val.className = 'val'
-  const minus = document.createElement('button')
-  minus.className = 'chip'
-  minus.textContent = '−'
-  const draw = () => (val.textContent = value())
-  draw()
-  plus.addEventListener('click', () => {
-    onStep(+1)
-    draw()
-  })
-  minus.addEventListener('click', () => {
-    onStep(-1)
-    draw()
-  })
-  box.append(plus, val, minus)
-  group.append(lab, box)
-  return group
+  host.appendChild(
+    collapsibleStepper('줄 간격', () => settings.lineSpacing.toFixed(1), (dir) => {
+      settings.lineSpacing = stepIn(SPACINGS, settings.lineSpacing, dir)
+      persist()
+    }),
+  )
+  host.appendChild(
+    collapsibleToggle('테마', () => (settings.theme === 'dark' ? '🌙 어둡게' : '☀ 밝게'), () => {
+      settings.theme = settings.theme === 'dark' ? 'light' : 'dark'
+      applyTheme(settings.theme)
+      persist()
+    }),
+  )
 }
 
 function esc(s: string): string {

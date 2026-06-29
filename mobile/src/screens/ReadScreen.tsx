@@ -30,7 +30,7 @@ function wrap(text: string, maxChars: number): string[] {
 
 export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts: ReadOpts }) {
   const fontSize = opts.fontSize
-  const lineH = Math.round(fontSize * 1.9)
+  const lineH = Math.round(fontSize * (opts.lineSpacing || 1.6))
   const charW = fontSize // 한글 한 글자 폭 근사
   const barW = 2 * charW // 약 2글자
   const msPerChar = 60000 / (400 * opts.speedMult)

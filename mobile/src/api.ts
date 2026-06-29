@@ -16,7 +16,15 @@ export type LeaderRow = {
   completedCount: number
 }
 export type TextRow = { id: number; title: string; body: string; category: string | null }
-export type ReadOpts = { speedMult: number; fontSize: number }
+export type ReadOpts = { speedMult: number; fontSize: number; lineSpacing: number }
+export type Settings = {
+  theme: string
+  fontPt: number
+  linesPerPage: number
+  speedMult: number
+  timerMin: number
+  lineSpacing: number
+}
 
 export async function getUrl(): Promise<string> {
   return (await AsyncStorage.getItem(KEY)) || DEFAULT_URL
@@ -70,6 +78,8 @@ export const api = {
   uploadSession: (s: { activeMs: number; charsRead: number; completed: boolean; startedAt: string }) =>
     call('/api/sessions', { method: 'POST', auth: true, body: s }),
   leaderboard: () => call<LeaderRow[]>('/api/leaderboard'),
+  getSettings: () => call<Settings>('/api/settings', { auth: true }),
+  saveSettings: (s: Settings) => call('/api/settings', { method: 'PUT', auth: true, body: s }),
 }
 
 export const COLORS = {
