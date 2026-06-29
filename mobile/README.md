@@ -3,13 +3,13 @@
 같은 Docker/Node 서버에 연결해 **PIN 로그인 + 친구 랭킹 + 읽기**를 아이패드에서 쓰는 Expo 앱.
 
 ## 준비
-1. **서버 실행** (PC):
+1. **서버**: `https://reading.metabiz.kr` (공개 도메인, 이미 운영 중). 직접 호스팅하려면:
    ```
    cd ../server
    npm install
    npm start            # 또는 docker compose up -d
    ```
-   PC의 LAN IP 확인(예: `192.168.1.200`), 방화벽 4000 포트 허용.
+   ※ 앱 기본 서버 주소는 도메인이라 LAN IP를 쓰지 않습니다.
 
 2. **앱 설치/실행** (PC):
    ```
