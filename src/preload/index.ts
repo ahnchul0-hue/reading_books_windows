@@ -1,7 +1,7 @@
 // contextIsolation 하에서 안전한 API만 노출 (nodeIntegration OFF).
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC, type Api } from '../shared/ipc-contract'
-import type { Settings, SessionProgress, ReadingState } from '../shared/types'
+import type { Settings, SessionProgress, ReadingState, CloudSession } from '../shared/types'
 
 const api: Api = {
   profiles: {
@@ -40,6 +40,20 @@ const api: Api = {
   },
   quotes: {
     next: (profileId: number) => ipcRenderer.invoke(IPC.quotesNext, profileId),
+  },
+  cloud: {
+    status: () => ipcRenderer.invoke(IPC.cloudStatus),
+    getUrl: () => ipcRenderer.invoke(IPC.cloudUrlGet),
+    setUrl: (url: string) => ipcRenderer.invoke(IPC.cloudUrlSet, url),
+    users: () => ipcRenderer.invoke(IPC.cloudUsers),
+    register: (name: string, avatar: string | null, pin: string) =>
+      ipcRenderer.invoke(IPC.cloudRegister, name, avatar, pin),
+    login: (userId: number, pin: string) => ipcRenderer.invoke(IPC.cloudLogin, userId, pin),
+    logout: () => ipcRenderer.invoke(IPC.cloudLogout),
+    saveText: (title: string, body: string, category: string | null) =>
+      ipcRenderer.invoke(IPC.cloudSaveText, title, body, category),
+    uploadSession: (s: CloudSession) => ipcRenderer.invoke(IPC.cloudUploadSession, s),
+    leaderboard: () => ipcRenderer.invoke(IPC.cloudLeaderboard),
   },
 }
 

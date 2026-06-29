@@ -9,6 +9,10 @@ import type {
   SessionRecord,
   ReadingState,
   Quote,
+  CloudUser,
+  CloudAuth,
+  CloudSession,
+  LeaderRow,
 } from './types'
 
 /** IPC 채널 이름. preload와 ipc.ts가 함께 참조. */
@@ -31,6 +35,16 @@ export const IPC = {
   stateSave: 'state:save',
   stateClear: 'state:clear',
   quotesNext: 'quotes:next',
+  cloudStatus: 'cloud:status',
+  cloudUrlGet: 'cloud:url:get',
+  cloudUrlSet: 'cloud:url:set',
+  cloudUsers: 'cloud:users',
+  cloudRegister: 'cloud:register',
+  cloudLogin: 'cloud:login',
+  cloudLogout: 'cloud:logout',
+  cloudSaveText: 'cloud:texts:save',
+  cloudUploadSession: 'cloud:sessions:upload',
+  cloudLeaderboard: 'cloud:leaderboard',
 } as const
 
 /** renderer에서 window.api로 접근하는 안전한 API 표면. */
@@ -66,5 +80,17 @@ export interface Api {
   }
   quotes: {
     next(profileId: number): Promise<Quote>
+  }
+  cloud: {
+    status(): Promise<boolean>
+    getUrl(): Promise<string>
+    setUrl(url: string): Promise<void>
+    users(): Promise<CloudUser[]>
+    register(name: string, avatar: string | null, pin: string): Promise<CloudAuth>
+    login(userId: number, pin: string): Promise<CloudAuth>
+    logout(): Promise<void>
+    saveText(title: string, body: string, category: string | null): Promise<{ id: number }>
+    uploadSession(s: CloudSession): Promise<{ ok: boolean }>
+    leaderboard(): Promise<LeaderRow[]>
   }
 }

@@ -75,6 +75,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   let pages = computePages()
 
   // 세션 시작 기록
+  const startedAtIso = new Date().toISOString()
   const sessionId = await api.session.start(
     profile.id,
     currentText.id ?? null,
@@ -218,6 +219,17 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
       charsRead: textCharsConsumed,
       finished: textFinished,
     })
+    // 서버에 세션 업로드(랭킹용, 베스트 에포트 — 오프라인이면 무시)
+    try {
+      await api.cloud.uploadSession({
+        activeMs: clock.activeMs,
+        charsRead,
+        completed: textFinished,
+        startedAt: startedAtIso,
+      })
+    } catch {
+      /* 오프라인 */
+    }
     state.lastSummary = {
       charsRead,
       activeMs: clock.activeMs,

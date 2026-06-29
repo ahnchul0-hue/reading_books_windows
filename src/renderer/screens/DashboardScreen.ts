@@ -1,5 +1,5 @@
 import type { AppContext } from '../context'
-import type { Category, TextItem } from '../../shared/types'
+import type { Category, TextItem, LeaderRow } from '../../shared/types'
 import { activeDateSet, computeStreak, monthlyCalendar, lastNDaysMinutes } from '../../core/stats'
 import { normalizeText } from '../../core/text'
 
@@ -54,6 +54,7 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
         <div class="cal" id="cal"></div>
       </div>
       <p class="cheer">${cheer}</p>
+      <div id="leader"></div>
       <div class="row-between">
         <h2>저장된 글</h2>
         <div class="row">
@@ -67,6 +68,7 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
     </section>`
 
   renderCalendar(root.querySelector('#cal') as HTMLElement, cal)
+  void renderLeaderboard(root.querySelector('#leader') as HTMLElement, ctx)
 
   // 카테고리 필터 칩
   let filterId: number | null = null
@@ -133,6 +135,68 @@ function renderCalendar(calEl: HTMLElement, cal: ReturnType<typeof monthlyCalend
     }
     calEl.appendChild(row)
   }
+}
+
+const METRICS = [
+  { key: 'streak' as const, label: '연속일 🔥', unit: '일' },
+  { key: 'weekMinutes' as const, label: '이번 주', unit: '분' },
+  { key: 'totalChars' as const, label: '글자', unit: '자' },
+  { key: 'completedCount' as const, label: '완독', unit: '권' },
+]
+
+async function renderLeaderboard(host: HTMLElement, ctx: AppContext): Promise<void> {
+  let board: LeaderRow[] = []
+  try {
+    board = await ctx.api.cloud.leaderboard()
+  } catch {
+    return // 오프라인 → 표시 안 함
+  }
+  if (board.length === 0) return
+  const meId = ctx.state.cloudUserId
+  let metric: (typeof METRICS)[number]['key'] = 'weekMinutes'
+  const medals = ['🥇', '🥈', '🥉']
+
+  const draw = () => {
+    const sorted = [...board].sort((a, b) => b[metric] - a[metric])
+    const max = Math.max(1, ...sorted.map((r) => r[metric]))
+    host.innerHTML = `<div class="panel">
+        <div class="panel-title">🏆 친구들과 비교</div>
+        <div class="row" id="lmetric"></div>
+        <div id="lrows"></div>
+        <div class="cheer" id="ldiff"></div>
+      </div>`
+    const mrow = host.querySelector('#lmetric') as HTMLElement
+    for (const m of METRICS) {
+      const b = document.createElement('button')
+      b.className = 'cchip' + (m.key === metric ? ' selected' : '')
+      b.textContent = m.label
+      b.addEventListener('click', () => {
+        metric = m.key
+        draw()
+      })
+      mrow.appendChild(b)
+    }
+    const rows = host.querySelector('#lrows') as HTMLElement
+    sorted.forEach((r, i) => {
+      const me = r.userId === meId
+      const div = document.createElement('div')
+      div.className = 'leader-row' + (me ? ' me' : '')
+      const rank = i < 3 ? medals[i] : `${i + 1}`
+      const pct = Math.round((r[metric] / max) * 100)
+      div.innerHTML = `<span class="lrank">${rank}</span><span class="lava">${r.avatar ?? '🙂'}</span><span class="lname"></span><span class="lbar"><span style="width:${pct}%"></span></span><span class="lval">${r[metric]}</span>`
+      ;(div.querySelector('.lname') as HTMLElement).textContent = r.name + (me ? ' (나)' : '')
+      rows.appendChild(div)
+    })
+    const diff = host.querySelector('#ldiff') as HTMLElement
+    const meIdx = sorted.findIndex((r) => r.userId === meId)
+    const unit = METRICS.find((m) => m.key === metric)!.unit
+    if (meIdx === 0) diff.textContent = '🎉 1등이에요! 멋져요!'
+    else if (meIdx > 0) {
+      const above = sorted[meIdx - 1]
+      diff.textContent = `한 칸 위 ${above.name}까지 ${above[metric] - sorted[meIdx][metric]}${unit} 남았어요. 조금만 더!`
+    } else diff.textContent = ''
+  }
+  draw()
 }
 
 function renderTexts(
@@ -228,6 +292,13 @@ function openComposer(
       if (!body || !state.profile) return
       const ttl = titleEl.value.trim() || body.split('\n')[0].slice(0, 20) || '내 글'
       await api.texts.save(state.profile.id, ttl, body, catId)
+      // 서버에도 저장(베스트 에포트 — 오프라인이면 무시)
+      const catName = cats.find((c) => c.id === catId)?.name ?? null
+      try {
+        await api.cloud.saveText(ttl, body, catName)
+      } catch {
+        /* 오프라인 */
+      }
       host.innerHTML = ''
       void nav.toDashboard()
     })

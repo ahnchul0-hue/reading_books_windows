@@ -71,5 +71,31 @@ export interface ReadingState {
   finished: boolean
 }
 
+// --- 서버(클라우드) 연동 타입 ---
+export interface CloudUser {
+  id: number
+  name: string
+  avatar: string | null
+}
+export interface CloudAuth {
+  token: string
+  user: CloudUser
+}
+export interface LeaderRow {
+  userId: number
+  name: string
+  avatar: string | null
+  streak: number
+  weekMinutes: number
+  totalChars: number
+  completedCount: number
+}
+export interface CloudSession {
+  activeMs: number
+  charsRead: number
+  completed: boolean
+  startedAt: string
+}
+
 // 명언 타입은 순수 코어(core/quotes)에서 정의한 것을 재사용한다.
 export type { Quote } from '../core/quotes'
