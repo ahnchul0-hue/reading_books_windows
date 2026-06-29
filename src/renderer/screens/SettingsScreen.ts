@@ -1,6 +1,7 @@
 import type { AppContext } from '../context'
 import { applyTheme } from '../theme'
 import { collapsibleStepper, collapsibleToggle } from '../ui'
+import { saveSettings } from '../settingsSync'
 
 const SPACINGS = [1.4, 1.6, 1.8, 2.0, 2.2]
 const FONT_MIN = 24
@@ -14,8 +15,10 @@ export function renderSettingsScreen(ctx: AppContext): void {
     nav.toProfile()
     return
   }
-  const persist = () => void api.settings.set(profile.id, settings)
-  const stepIn = <T,>(arr: readonly T[], cur: T, dir: number): T =>
+  const persist = () => saveSettings(ctx)
+  void api
+  void profile
+  const stepIn =<T,>(arr: readonly T[], cur: T, dir: number): T =>
     arr[Math.max(0, Math.min(arr.length - 1, arr.indexOf(cur) + dir))]
 
   root.innerHTML = `

@@ -2,6 +2,7 @@ import type { AppContext } from '../context'
 import type { CloudUser } from '../../shared/types'
 import { applyTheme } from '../theme'
 import { showPinPad } from '../pinPad'
+import { loadSettings } from '../settingsSync'
 
 const AVATARS = ['🐰', '🦊', '🐼', '🐯', '🐸', '🐧', '🐬', '🦉', '🐱', '🐶']
 
@@ -19,7 +20,7 @@ async function loginAs(ctx: AppContext, user: CloudUser): Promise<void> {
   const lp = locals.find((p) => p.name === user.name) ?? (await api.profiles.create(user.name, user.avatar))
   state.profile = lp
   state.cloudUserId = user.id
-  state.settings = await api.settings.get(lp.id)
+  state.settings = await loadSettings(ctx) // 온라인이면 서버 설정 기준
   applyTheme(state.settings.theme)
   nav.toDashboard()
 }

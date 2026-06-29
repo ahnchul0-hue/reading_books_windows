@@ -67,9 +67,13 @@ export function registerIpc(service: Service): void {
   )
   ipcMain.handle(IPC.cloudLogin, (_e, userId: number, pin: string) => cloud.login(userId, pin))
   ipcMain.handle(IPC.cloudLogout, () => cloud.logout())
+  ipcMain.handle(IPC.cloudTexts, () => cloud.textsList())
   ipcMain.handle(IPC.cloudSaveText, (_e, title: string, body: string, category: string | null) =>
     cloud.textsSave(title, body, category),
   )
   ipcMain.handle(IPC.cloudUploadSession, (_e, s: CloudSession) => cloud.sessionUpload(s))
+  ipcMain.handle(IPC.cloudMeSessions, () => cloud.meSessions())
+  ipcMain.handle(IPC.cloudSettingsGet, () => cloud.settingsGet())
+  ipcMain.handle(IPC.cloudSettingsSet, (_e, s: Settings) => cloud.settingsSave(s))
   ipcMain.handle(IPC.cloudLeaderboard, () => cloud.leaderboard())
 }

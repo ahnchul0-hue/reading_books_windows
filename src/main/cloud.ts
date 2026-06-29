@@ -2,7 +2,15 @@
 import { app } from 'electron'
 import { join } from 'node:path'
 import { readFileSync, writeFileSync } from 'node:fs'
-import type { CloudAuth, CloudSession, CloudUser, LeaderRow } from '../shared/types'
+import type {
+  CloudAuth,
+  CloudSession,
+  CloudUser,
+  CloudTextRow,
+  CloudDaySession,
+  LeaderRow,
+  Settings,
+} from '../shared/types'
 
 const DEFAULT_URL = 'https://reading.metabiz.kr'
 
@@ -64,9 +72,13 @@ export const cloud = {
   logout(): void {
     token = null
   },
+  textsList: () => call<CloudTextRow[]>('/api/texts', { auth: true }),
   textsSave: (title: string, body: string, category: string | null) =>
     call<{ id: number }>('/api/texts', { method: 'POST', auth: true, body: { title, body, category } }),
   sessionUpload: (s: CloudSession) =>
     call<{ ok: boolean }>('/api/sessions', { method: 'POST', auth: true, body: s }),
+  meSessions: () => call<CloudDaySession[]>('/api/me/sessions', { auth: true }),
+  settingsGet: () => call<Settings>('/api/settings', { auth: true }),
+  settingsSave: (s: Settings) => call<{ ok: boolean }>('/api/settings', { method: 'PUT', auth: true, body: s }),
   leaderboard: () => call<LeaderRow[]>('/api/leaderboard'),
 }

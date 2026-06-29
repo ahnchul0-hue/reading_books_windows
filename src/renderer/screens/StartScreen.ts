@@ -1,6 +1,7 @@
 import type { AppContext, SelectedText } from '../context'
 import type { LinesPerPage, SpeedMult, TextItem, TimerMin } from '../../shared/types'
 import { applyTheme } from '../theme'
+import { saveSettings } from '../settingsSync'
 
 const LINES: LinesPerPage[] = [3, 4, 5]
 const SPEEDS: SpeedMult[] = [0.5, 1.0, 1.5, 2.0]
@@ -164,7 +165,9 @@ function renderOptions(ctx: AppContext, host: HTMLElement): void {
   const { state, api } = ctx
   const settings = state.settings!
   const profile = state.profile!
-  const persist = () => void api.settings.set(profile.id, settings)
+  const persist = () => saveSettings(ctx)
+  void api
+  void profile
 
   host.innerHTML = ''
   const stepIn = <T,>(arr: readonly T[], cur: T, dir: number): T => {

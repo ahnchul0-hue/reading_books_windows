@@ -50,9 +50,13 @@ const api: Api = {
       ipcRenderer.invoke(IPC.cloudRegister, name, avatar, pin),
     login: (userId: number, pin: string) => ipcRenderer.invoke(IPC.cloudLogin, userId, pin),
     logout: () => ipcRenderer.invoke(IPC.cloudLogout),
+    textsList: () => ipcRenderer.invoke(IPC.cloudTexts),
     saveText: (title: string, body: string, category: string | null) =>
       ipcRenderer.invoke(IPC.cloudSaveText, title, body, category),
     uploadSession: (s: CloudSession) => ipcRenderer.invoke(IPC.cloudUploadSession, s),
+    meSessions: () => ipcRenderer.invoke(IPC.cloudMeSessions),
+    settingsGet: () => ipcRenderer.invoke(IPC.cloudSettingsGet),
+    settingsSave: (s: Settings) => ipcRenderer.invoke(IPC.cloudSettingsSet, s),
     leaderboard: () => ipcRenderer.invoke(IPC.cloudLeaderboard),
   },
 }

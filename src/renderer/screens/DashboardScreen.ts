@@ -18,21 +18,37 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
     return
   }
 
-  const [sessions, texts, cats] = await Promise.all([
-    api.session.recent(profile.id),
-    api.texts.list(profile.id),
-    api.categories.list(),
-  ])
+  const cats = await api.categories.list()
+  const online = state.cloudUserId != null
+  let texts: TextItem[]
+  let statSessions: { startedAt: string; activeMs: number }[]
+  if (online) {
+    try {
+      const ct = await api.cloud.textsList()
+      texts = ct.map((t) => ({
+        id: t.id,
+        profileId: profile.id,
+        title: t.title,
+        body: t.body,
+        createdAt: '',
+        categoryId: cats.find((c) => c.name === t.category)?.id ?? null,
+        category: cats.find((c) => c.name === t.category) ?? null,
+      }))
+      statSessions = await api.cloud.meSessions()
+    } catch {
+      texts = await api.texts.list(profile.id)
+      statSessions = (await api.session.recent(profile.id)).map((s) => ({ startedAt: s.startedAt, activeMs: s.activeMs }))
+    }
+  } else {
+    texts = await api.texts.list(profile.id)
+    statSessions = (await api.session.recent(profile.id)).map((s) => ({ startedAt: s.startedAt, activeMs: s.activeMs }))
+  }
 
   const now = new Date()
   const todayKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
-  const active = activeDateSet(sessions.map((s) => s.startedAt))
+  const active = activeDateSet(statSessions.map((s) => s.startedAt))
   const streak = computeStreak(active, todayKey)
-  const weekMin = lastNDaysMinutes(
-    sessions.map((s) => ({ startedAt: s.startedAt, activeMs: s.activeMs })),
-    todayKey,
-    7,
-  ).reduce((a, b) => a + b.minutes, 0)
+  const weekMin = lastNDaysMinutes(statSessions, todayKey, 7).reduce((a, b) => a + b.minutes, 0)
   const cal = monthlyCalendar(now.getFullYear(), now.getMonth(), active, todayKey)
   const cheer =
     streak > 0
@@ -52,7 +68,7 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
       <div class="dash-grid">
         <div class="stat"><div class="stat-num">🔥 ${streak}</div><div class="stat-lbl">연속 일수</div></div>
         <div class="stat"><div class="stat-num">${weekMin}<span class="unit">분</span></div><div class="stat-lbl">이번 주</div></div>
-        <div class="stat"><div class="stat-num">${sessions.length}<span class="unit">회</span></div><div class="stat-lbl">총 읽기</div></div>
+        <div class="stat"><div class="stat-num">${statSessions.length}<span class="unit">회</span></div><div class="stat-lbl">총 읽기</div></div>
       </div>
       <div class="panel">
         <div class="panel-title">${now.getFullYear()}년 ${now.getMonth() + 1}월</div>

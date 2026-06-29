@@ -12,6 +12,8 @@ import type {
   CloudUser,
   CloudAuth,
   CloudSession,
+  CloudTextRow,
+  CloudDaySession,
   LeaderRow,
 } from './types'
 
@@ -42,8 +44,12 @@ export const IPC = {
   cloudRegister: 'cloud:register',
   cloudLogin: 'cloud:login',
   cloudLogout: 'cloud:logout',
+  cloudTexts: 'cloud:texts:list',
   cloudSaveText: 'cloud:texts:save',
   cloudUploadSession: 'cloud:sessions:upload',
+  cloudMeSessions: 'cloud:me:sessions',
+  cloudSettingsGet: 'cloud:settings:get',
+  cloudSettingsSet: 'cloud:settings:set',
   cloudLeaderboard: 'cloud:leaderboard',
 } as const
 
@@ -89,8 +95,12 @@ export interface Api {
     register(name: string, avatar: string | null, pin: string): Promise<CloudAuth>
     login(userId: number, pin: string): Promise<CloudAuth>
     logout(): Promise<void>
+    textsList(): Promise<CloudTextRow[]>
     saveText(title: string, body: string, category: string | null): Promise<{ id: number }>
     uploadSession(s: CloudSession): Promise<{ ok: boolean }>
+    meSessions(): Promise<CloudDaySession[]>
+    settingsGet(): Promise<Settings>
+    settingsSave(s: Settings): Promise<{ ok: boolean }>
     leaderboard(): Promise<LeaderRow[]>
   }
 }

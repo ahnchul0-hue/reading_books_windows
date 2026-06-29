@@ -2,6 +2,7 @@ import type { AppContext, SelectedText } from './context'
 import type { LinesPerPage, SpeedMult, TextItem, TimerMin } from '../shared/types'
 import { applyTheme } from './theme'
 import { collapsibleStepper, collapsibleToggle } from './ui'
+import { saveSettings } from './settingsSync'
 
 const SPACINGS = [1.4, 1.6, 1.8, 2.0, 2.2]
 
@@ -78,7 +79,9 @@ export function showOptionsPopup(ctx: AppContext): Promise<boolean> {
       resolve(false)
       return
     }
-    const persist = () => void api.settings.set(profile.id, settings)
+    const persist = () => saveSettings(ctx)
+    void api
+    void profile
     const overlay = document.createElement('div')
     overlay.className = 'opt-overlay'
     overlay.innerHTML = `

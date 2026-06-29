@@ -98,6 +98,16 @@ export interface CloudSession {
   completed: boolean
   startedAt: string
 }
+export interface CloudTextRow {
+  id: number
+  title: string
+  body: string
+  category: string | null
+}
+export interface CloudDaySession {
+  startedAt: string
+  activeMs: number
+}
 
 // 명언 타입은 순수 코어(core/quotes)에서 정의한 것을 재사용한다.
 export type { Quote } from '../core/quotes'
