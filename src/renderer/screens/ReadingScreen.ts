@@ -105,7 +105,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   let currentLineText = ''
   let timeline: LineTimeline = { totalPx: 0, totalMs: 0, pxPerMs: 0, stops: [] }
   let lineEls: HTMLElement[] = []
-  let phase: 'reading' | 'paused' | 'break' | 'ended' = 'reading'
+  let phase: 'reading' | 'paused' | 'break' | 'ended' | 'transition' = 'reading'
   let raf = 0
   let lastNow = 0
 
@@ -195,6 +195,38 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
 
   function setBarX(x: number): void {
     bar.style.transform = `translateX(${x - barWidth / 2}px)`
+  }
+
+  // 줄바꿈 이펙트: 막대를 다음 줄 첫 글자로 이으며 부드럽게 사라졌다가 새 줄에서 시작
+  function startLineTransition(needRender: boolean): void {
+    phase = 'transition'
+    cancelAnimationFrame(raf)
+    if (needRender) renderPage()
+    const lineEl = lineEls[lineIndex]
+    const pageRect = pageEl.getBoundingClientRect()
+    const lineRect = lineEl.getBoundingClientRect()
+    const top = lineRect.top - pageRect.top
+    bar.style.transition = 'transform 0.22s ease, top 0.22s ease, opacity 0.22s ease'
+    lineHi.style.transition = 'top 0.22s ease, opacity 0.22s ease'
+    bar.style.top = `${top}px`
+    bar.style.height = `${lineRect.height}px`
+    bar.style.transform = `translateX(${-barWidth / 2}px)` // 다음 줄 첫 글자
+    bar.style.opacity = '0'
+    lineHi.style.top = `${top}px`
+    lineHi.style.height = `${lineRect.height}px`
+    lineHi.style.opacity = '0.001'
+    window.setTimeout(() => {
+      if (phase !== 'transition') return
+      bar.style.transition = ''
+      lineHi.style.transition = ''
+      bar.style.opacity = '1'
+      lineHi.style.opacity = ''
+      loadLine()
+      lineElapsedMs = 0
+      phase = 'reading'
+      lastNow = 0
+      raf = requestAnimationFrame(frame)
+    }, 230)
   }
 
   function updateTopUI(): void {
@@ -293,17 +325,16 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
         textCharsConsumed = 0
         pageIndex = 0
         lineIndex = 0
-        renderPage()
-      } else if (adv.pageIndex !== pageIndex) {
-        pageIndex = adv.pageIndex
-        lineIndex = adv.lineIndex
-        renderPage()
-      } else {
-        lineIndex = adv.lineIndex
+        pageReached = Math.max(pageReached, pageIndex + 1)
+        startLineTransition(true)
+        return
       }
+      const pageChanged = adv.pageIndex !== pageIndex
+      pageIndex = adv.pageIndex
+      lineIndex = adv.lineIndex
       pageReached = Math.max(pageReached, pageIndex + 1)
-      loadLine()
-      lineElapsedMs = 0
+      startLineTransition(pageChanged)
+      return
     }
 
     if (isEnded(clock)) {

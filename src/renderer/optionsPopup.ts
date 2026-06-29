@@ -1,6 +1,63 @@
-import type { AppContext } from './context'
-import type { LinesPerPage, SpeedMult, TimerMin } from '../shared/types'
+import type { AppContext, SelectedText } from './context'
+import type { LinesPerPage, SpeedMult, TextItem, TimerMin } from '../shared/types'
 import { applyTheme } from './theme'
+
+/**
+ * 선택한 글이 타이머 시간보다 짧으면(글자수 부족), 남는 시간에 읽을 다음 글을 고르는 팝업.
+ * @returns 대기열로 추가할 글들
+ */
+export function showPickMorePopup(
+  ctx: AppContext,
+  candidates: TextItem[],
+  remainSec: number,
+): Promise<SelectedText[]> {
+  return new Promise((resolve) => {
+    const picked = new Set<number>()
+    const overlay = document.createElement('div')
+    overlay.className = 'opt-overlay'
+    overlay.innerHTML = `
+      <div class="opt-box">
+        <div class="opt-title">⏱ 시간이 남아요!</div>
+        <p class="muted">이 글은 정한 시간보다 짧아요(약 ${remainSec}초 남음). 시간이 남으면 이어서 읽을 다음 글을 골라요.</p>
+        <div class="list" id="more"></div>
+        <div class="row" style="justify-content:flex-end">
+          <button class="btn" id="skip">그냥 시작</button>
+          <button class="btn btn-primary btn-lg" id="go">선택하고 시작 ▶</button>
+        </div>
+      </div>`
+    document.body.appendChild(overlay)
+    const list = overlay.querySelector('#more') as HTMLElement
+    if (candidates.length === 0) list.innerHTML = `<p class="muted">고를 다른 글이 없어요.</p>`
+    for (const t of candidates) {
+      const item = document.createElement('div')
+      item.className = 'list-item'
+      const set = () => {
+        item.classList.toggle('selected', picked.has(t.id))
+        item.textContent = (picked.has(t.id) ? '✓ ' : '') + (t.title || '(제목 없음)')
+      }
+      set()
+      item.addEventListener('click', () => {
+        if (picked.has(t.id)) picked.delete(t.id)
+        else picked.add(t.id)
+        set()
+      })
+      list.appendChild(item)
+    }
+    const finish = () => {
+      overlay.remove()
+      resolve(
+        candidates
+          .filter((t) => picked.has(t.id))
+          .map((t) => ({ id: t.id, title: t.title, body: t.body })),
+      )
+    }
+    ;(overlay.querySelector('#skip') as HTMLElement).addEventListener('click', () => {
+      picked.clear()
+      finish()
+    })
+    ;(overlay.querySelector('#go') as HTMLElement).addEventListener('click', finish)
+  })
+}
 
 const LINES: LinesPerPage[] = [3, 4, 5]
 const SPEEDS: SpeedMult[] = [0.5, 1.0, 1.5, 2.0]

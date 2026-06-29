@@ -2,7 +2,8 @@ import type { AppContext } from '../context'
 import type { Category, TextItem, LeaderRow } from '../../shared/types'
 import { activeDateSet, computeStreak, monthlyCalendar, lastNDaysMinutes } from '../../core/stats'
 import { normalizeText } from '../../core/text'
-import { showOptionsPopup } from '../optionsPopup'
+import { showOptionsPopup, showPickMorePopup } from '../optionsPopup'
+import { countableLength, msPerChar } from '../../core/cpm'
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -237,7 +238,19 @@ function renderTexts(
       state.queue = []
       state.resumeChars = 0
       const go = await showOptionsPopup(ctx)
-      if (go) nav.toReading()
+      if (!go) return
+      // 글자수 vs 시간: 글이 짧으면 다음 글을 고르도록 안내
+      const settings = state.settings
+      if (settings) {
+        const estMs = countableLength(t.body) * msPerChar(settings.speedMult)
+        const timerMs = settings.timerMin * 60000
+        if (estMs < timerMs * 0.9) {
+          const remainSec = Math.round((timerMs - estMs) / 1000)
+          const others = texts.filter((x) => x.id !== t.id)
+          state.queue = await showPickMorePopup(ctx, others, remainSec)
+        }
+      }
+      nav.toReading()
     })
     grid.appendChild(card)
   }
