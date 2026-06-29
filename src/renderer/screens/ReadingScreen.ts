@@ -62,6 +62,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   const pauseBtn = root.querySelector('#pause') as HTMLButtonElement
   pageEl.style.position = 'relative'
   pageEl.style.fontSize = `${settings.fontPt}pt`
+  pageEl.style.lineHeight = String(settings.lineSpacing) // 줄간격
 
   // 글꼴/크기·창 크기 기준 1줄 최대 글자수 추정 → core.paginate (반응형)
   let charWidthPx = measureCharWidth(pageEl)

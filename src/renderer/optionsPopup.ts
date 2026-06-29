@@ -1,6 +1,9 @@
 import type { AppContext, SelectedText } from './context'
 import type { LinesPerPage, SpeedMult, TextItem, TimerMin } from '../shared/types'
 import { applyTheme } from './theme'
+import { collapsibleStepper, collapsibleToggle } from './ui'
+
+const SPACINGS = [1.4, 1.6, 1.8, 2.0, 2.2]
 
 /**
  * 선택한 글이 타이머 시간보다 짧으면(글자수 부족), 남는 시간에 읽을 다음 글을 고르는 팝업.
@@ -94,38 +97,32 @@ export function showOptionsPopup(ctx: AppContext): Promise<boolean> {
     const stepIn = <T,>(arr: readonly T[], cur: T, dir: number): T =>
       arr[Math.max(0, Math.min(arr.length - 1, arr.indexOf(cur) + dir))]
 
-    opts.appendChild(stepper('한 화면 줄 수', () => `${settings.linesPerPage}줄`, (d) => {
+    // 기본 접힘 — 펼쳐서 선택
+    opts.appendChild(collapsibleStepper('한 화면 줄 수', () => `${settings.linesPerPage}줄`, (d) => {
       settings.linesPerPage = stepIn(LINES, settings.linesPerPage, d)
       persist()
     }))
-    opts.appendChild(stepper('속도', () => `${settings.speedMult.toFixed(1)}×`, (d) => {
+    opts.appendChild(collapsibleStepper('속도', () => `${settings.speedMult.toFixed(1)}×`, (d) => {
       settings.speedMult = stepIn(SPEEDS, settings.speedMult, d)
       persist()
     }))
-    opts.appendChild(stepper('시간', () => `${settings.timerMin}분`, (d) => {
+    opts.appendChild(collapsibleStepper('시간', () => `${settings.timerMin}분`, (d) => {
       settings.timerMin = stepIn(TIMERS, settings.timerMin, d)
       persist()
     }))
-    opts.appendChild(stepper('글자 크기', () => `${settings.fontPt}pt`, (d) => {
+    opts.appendChild(collapsibleStepper('글자 크기', () => `${settings.fontPt}pt`, (d) => {
       settings.fontPt = Math.max(FONT_MIN, Math.min(FONT_MAX, settings.fontPt + d * 2))
       persist()
     }))
-
-    const themeGroup = document.createElement('div')
-    themeGroup.className = 'option-group'
-    themeGroup.innerHTML = `<label>테마</label>`
-    const tbtn = document.createElement('button')
-    tbtn.className = 'btn'
-    const drawTheme = () => (tbtn.textContent = settings.theme === 'dark' ? '🌙 어둡게' : '☀ 밝게')
-    drawTheme()
-    tbtn.addEventListener('click', () => {
+    opts.appendChild(collapsibleStepper('줄 간격', () => settings.lineSpacing.toFixed(1), (d) => {
+      settings.lineSpacing = stepIn(SPACINGS, settings.lineSpacing, d)
+      persist()
+    }))
+    opts.appendChild(collapsibleToggle('테마', () => (settings.theme === 'dark' ? '🌙 어둡게' : '☀ 밝게'), () => {
       settings.theme = settings.theme === 'dark' ? 'light' : 'dark'
       applyTheme(settings.theme)
-      drawTheme()
       persist()
-    })
-    themeGroup.appendChild(tbtn)
-    opts.appendChild(themeGroup)
+    }))
 
     const close = (v: boolean) => {
       overlay.remove()

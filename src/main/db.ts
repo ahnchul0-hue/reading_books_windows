@@ -116,4 +116,8 @@ export function migrate(db: Db): void {
     db.exec(MIGRATION_0003)
     db.pragma('user_version = 3')
   }
+  if (version < 4) {
+    db.exec(`ALTER TABLE settings ADD COLUMN line_spacing REAL DEFAULT 1.6;`)
+    db.pragma('user_version = 4')
+  }
 }

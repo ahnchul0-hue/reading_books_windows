@@ -128,7 +128,7 @@ input[type="text"] {
   display: flex; flex-direction: column; justify-content: center; gap: 0.6em;
   border: 2px solid var(--muted); border-radius: 16px; /* 본문 외곽 박스 */
 }
-.line { position: relative; z-index: 1; white-space: pre; line-height: 1.6; }
+.line { position: relative; z-index: 1; white-space: pre; line-height: inherit; }
 /* 현재 줄 배경 음영: 백그라운드(텍스트 뒤), 은은하게 */
 .line-highlight {
   position: absolute; left: 0; width: 100%; z-index: 0; pointer-events: none;
@@ -207,6 +207,21 @@ input[type="text"] {
 .cchip.selected { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
 .swatch { width: 2.2rem; height: 2.2rem; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
 .swatch.selected { border-color: var(--fg); }
+
+/* 접이식 메뉴(기본 접힘) */
+.options-col { display: flex; flex-direction: column; gap: 0.6rem; max-width: 520px; }
+.collapsible { background: var(--panel); border-radius: 12px; overflow: hidden; }
+.collapsible-head {
+  width: 100%; display: flex; align-items: center; gap: 0.6rem; cursor: pointer;
+  background: transparent; border: none; color: var(--fg); font: inherit;
+  padding: 0.9rem 1rem; text-align: left;
+}
+.collapsible-head .col-label { font-weight: 700; }
+.collapsible-head .col-value { margin-left: auto; color: var(--accent); font-weight: 700; }
+.collapsible-head .chev { color: var(--muted); }
+.collapsible-body { padding: 0 1rem 1rem; }
+.stepper-row { display: flex; align-items: center; gap: 0.8rem; }
+.stepper-row .val { font-size: 1.45rem; font-weight: 700; min-width: 4.5rem; text-align: center; }
 
 /* 읽기 옵션 팝업 */
 .opt-overlay {

@@ -18,6 +18,7 @@ export interface Settings {
   linesPerPage: LinesPerPage
   speedMult: SpeedMult
   timerMin: TimerMin
+  lineSpacing: number // 줄간격(line-height 배수)
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: Settings = {
   linesPerPage: 4, // v2: 기본 4줄
   speedMult: 1.0,
   timerMin: 10,
+  lineSpacing: 1.6,
 }
 
 export interface Category {

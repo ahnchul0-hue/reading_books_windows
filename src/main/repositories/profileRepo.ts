@@ -49,17 +49,18 @@ export function makeProfileRepo(db: Db) {
         linesPerPage: r.lines_per_page as LinesPerPage,
         speedMult: r.speed_mult as SpeedMult,
         timerMin: r.timer_min as TimerMin,
+        lineSpacing: r.line_spacing ?? 1.6,
       }
     },
 
     /** 설정 저장(upsert, 프로필당 1행). */
     setSettings(profileId: number, s: Settings): void {
       db.prepare(
-        `INSERT INTO settings(profile_id, theme, font_pt, lines_per_page, speed_mult, timer_min)
-         VALUES (@profileId, @theme, @fontPt, @linesPerPage, @speedMult, @timerMin)
+        `INSERT INTO settings(profile_id, theme, font_pt, lines_per_page, speed_mult, timer_min, line_spacing)
+         VALUES (@profileId, @theme, @fontPt, @linesPerPage, @speedMult, @timerMin, @lineSpacing)
          ON CONFLICT(profile_id) DO UPDATE SET
            theme=@theme, font_pt=@fontPt, lines_per_page=@linesPerPage,
-           speed_mult=@speedMult, timer_min=@timerMin`,
+           speed_mult=@speedMult, timer_min=@timerMin, line_spacing=@lineSpacing`,
       ).run({ profileId, ...s })
     },
   }

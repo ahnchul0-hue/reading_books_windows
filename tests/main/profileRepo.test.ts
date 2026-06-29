@@ -46,15 +46,15 @@ describe('profileRepo', () => {
 
   it('setSettings 후 getSettings 라운드트립', () => {
     const p = repo.create('민지')
-    const s: Settings = { theme: 'dark', fontPt: 32, linesPerPage: 4, speedMult: 1.5, timerMin: 20 }
+    const s: Settings = { theme: 'dark', fontPt: 32, linesPerPage: 4, speedMult: 1.5, timerMin: 20, lineSpacing: 1.8 }
     repo.setSettings(p.id, s)
     expect(repo.getSettings(p.id)).toEqual(s)
   })
 
   it('setSettings는 upsert로 기존 설정을 갱신', () => {
     const p = repo.create('민지')
-    repo.setSettings(p.id, { theme: 'light', fontPt: 24, linesPerPage: 3, speedMult: 0.5, timerMin: 5 })
-    repo.setSettings(p.id, { theme: 'dark', fontPt: 28, linesPerPage: 5, speedMult: 2.0, timerMin: 15 })
+    repo.setSettings(p.id, { theme: 'light', fontPt: 24, linesPerPage: 3, speedMult: 0.5, timerMin: 5, lineSpacing: 1.4 })
+    repo.setSettings(p.id, { theme: 'dark', fontPt: 28, linesPerPage: 5, speedMult: 2.0, timerMin: 15, lineSpacing: 2.0 })
     const got = repo.getSettings(p.id)
     expect(got.theme).toBe('dark')
     expect(got.fontPt).toBe(28)

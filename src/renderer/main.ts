@@ -3,6 +3,7 @@ import { applyTheme } from './theme'
 import type { AppContext, AppState, Nav } from './context'
 import { renderProfileScreen } from './screens/ProfileScreen'
 import { renderDashboardScreen } from './screens/DashboardScreen'
+import { renderSettingsScreen } from './screens/SettingsScreen'
 import { renderStartScreen } from './screens/StartScreen'
 import { renderReadingScreen } from './screens/ReadingScreen'
 import { renderEndScreen } from './screens/EndScreen'
@@ -13,6 +14,7 @@ const state: AppState = {}
 const nav: Nav = {
   toProfile: () => void renderProfileScreen(ctx),
   toDashboard: () => void renderDashboardScreen(ctx),
+  toSettings: () => renderSettingsScreen(ctx),
   toStart: () => void renderStartScreen(ctx),
   toReading: () => void renderReadingScreen(ctx),
   toEnd: () => void renderEndScreen(ctx),

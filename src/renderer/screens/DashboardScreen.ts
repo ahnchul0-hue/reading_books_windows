@@ -43,7 +43,10 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
     <section class="screen">
       <div class="row-between">
         <h1>${profile.avatar ?? '🙂'} ${esc(profile.name)}</h1>
-        <button class="btn" id="home">친구 바꾸기</button>
+        <div class="row">
+          <button class="btn" id="settings">⚙ 설정</button>
+          <button class="btn" id="home">친구 바꾸기</button>
+        </div>
       </div>
       <button class="btn btn-primary btn-lg" id="start">▶ 읽기 시작</button>
       <div class="dash-grid">
@@ -100,6 +103,7 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
 
   // 이벤트
   ;(root.querySelector('#home') as HTMLElement).addEventListener('click', () => nav.toProfile())
+  ;(root.querySelector('#settings') as HTMLElement).addEventListener('click', () => nav.toSettings())
   ;(root.querySelector('#start') as HTMLElement).addEventListener('click', () => nav.toStart())
   const composerEl = root.querySelector('#composer') as HTMLElement
   ;(root.querySelector('#compose') as HTMLElement).addEventListener('click', () =>
