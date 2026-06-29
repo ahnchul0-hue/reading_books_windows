@@ -33,7 +33,10 @@ async function renderCloudHome(ctx: AppContext): Promise<void> {
     <section class="screen">
       <div class="row-between">
         <h1>📖 읽기 친구들</h1>
-        <button class="btn btn-primary" id="add">＋ 새 사용자</button>
+        <div class="row">
+          <button class="btn" id="settings">⚙ 서버</button>
+          <button class="btn btn-primary" id="add">＋ 새 사용자</button>
+        </div>
       </div>
       <p class="muted">친구를 고르고 비밀번호(4자리)를 눌러요. 🟢 서버 연결됨 — 친구들과 비교할 수 있어요.</p>
       <div class="cards" id="cards"></div>
@@ -41,6 +44,9 @@ async function renderCloudHome(ctx: AppContext): Promise<void> {
 
   const cards = root.querySelector('#cards') as HTMLElement
   ;(root.querySelector('#add') as HTMLElement).addEventListener('click', () => renderNewCloudUser(ctx))
+  ;(root.querySelector('#settings') as HTMLElement).addEventListener('click', () =>
+    renderServerSettings(ctx),
+  )
 
   if (users.length === 0) {
     cards.innerHTML = `<p class="muted">오른쪽 위 “＋ 새 사용자”로 첫 친구를 만들어요.</p>`
@@ -118,6 +124,44 @@ function renderNewCloudUser(ctx: AppContext): void {
   nick.focus()
 }
 
+// --- 서버 주소 설정 ---
+async function renderServerSettings(ctx: AppContext): Promise<void> {
+  const { root, api } = ctx
+  const url = await api.cloud.getUrl()
+  root.innerHTML = `
+    <section class="screen">
+      <h1>⚙ 서버 설정</h1>
+      <p class="muted">친구들과 비교하려면 같은 서버 주소를 써요. 다른 기기에서는 이 컴퓨터의 주소를 넣어요.</p>
+      <div class="option-group">
+        <label>서버 주소</label>
+        <input type="text" id="surl" placeholder="http://192.168.0.10:4000" />
+      </div>
+      <div class="row">
+        <button class="btn" id="test">연결 테스트</button>
+        <span id="tstat" class="muted"></span>
+      </div>
+      <div class="row">
+        <button class="btn" id="back">← 뒤로</button>
+        <button class="btn btn-primary" id="save">저장</button>
+      </div>
+    </section>`
+  const input = root.querySelector('#surl') as HTMLInputElement
+  input.value = url
+  const stat = root.querySelector('#tstat') as HTMLElement
+  ;(root.querySelector('#test') as HTMLElement).addEventListener('click', async () => {
+    stat.textContent = '확인 중…'
+    await api.cloud.setUrl(input.value.trim())
+    const ok = await api.cloud.status().catch(() => false)
+    stat.textContent = ok ? '🟢 연결됨' : '🔴 연결 안 됨'
+  })
+  ;(root.querySelector('#back') as HTMLElement).addEventListener('click', () => renderProfileScreen(ctx))
+  ;(root.querySelector('#save') as HTMLElement).addEventListener('click', async () => {
+    await api.cloud.setUrl(input.value.trim())
+    void renderProfileScreen(ctx)
+  })
+  input.focus()
+}
+
 // --- 서버 미연결: 로컬 모드(기존 동작) ---
 async function renderLocalHome(ctx: AppContext): Promise<void> {
   const { root, api, state, nav } = ctx
@@ -126,13 +170,19 @@ async function renderLocalHome(ctx: AppContext): Promise<void> {
     <section class="screen">
       <div class="row-between">
         <h1>📖 읽기 친구들</h1>
-        <button class="btn btn-primary" id="add">＋ 새 사용자</button>
+        <div class="row">
+          <button class="btn" id="settings">⚙ 서버</button>
+          <button class="btn btn-primary" id="add">＋ 새 사용자</button>
+        </div>
       </div>
       <p class="muted">⚪ 오프라인 모드 — 기록은 이 컴퓨터에만 저장돼요. (서버에 연결되면 친구와 비교돼요.)</p>
       <div class="cards" id="cards"></div>
     </section>`
   const cards = root.querySelector('#cards') as HTMLElement
   ;(root.querySelector('#add') as HTMLElement).addEventListener('click', () => renderLocalNewProfile(ctx))
+  ;(root.querySelector('#settings') as HTMLElement).addEventListener('click', () =>
+    renderServerSettings(ctx),
+  )
   if (profiles.length === 0) {
     cards.innerHTML = `<p class="muted">오른쪽 위 “＋ 새 사용자”로 첫 친구를 만들어요.</p>`
   }
