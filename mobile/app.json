@@ -1,0 +1,19 @@
+{
+  "expo": {
+    "name": "Reading Trainer",
+    "slug": "reading-trainer-mobile",
+    "version": "0.1.0",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.readingtrainer.mobile"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "plugins": [
+      "expo-asset"
+    ]
+  }
+}
