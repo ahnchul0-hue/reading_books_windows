@@ -74,6 +74,47 @@ export function createApp(db) {
     res.json(statsFor(db, req.userId))
   })
 
+  // 내 세션 목록(대시보드 캘린더/연속일 계산용)
+  app.get('/api/me/sessions', authMiddleware, (req, res) => {
+    const rows = db
+      .prepare('SELECT started_at AS startedAt, active_ms AS activeMs FROM sessions WHERE user_id=?')
+      .all(req.userId)
+    res.json(rows)
+  })
+
+  // 설정(서버 기준)
+  const DEFAULT_SETTINGS = {
+    theme: 'dark',
+    fontPt: 24,
+    linesPerPage: 4,
+    speedMult: 1.0,
+    timerMin: 10,
+    lineSpacing: 1.6,
+  }
+  app.get('/api/settings', authMiddleware, (req, res) => {
+    const r = db.prepare('SELECT * FROM user_settings WHERE user_id=?').get(req.userId)
+    if (!r) return res.json(DEFAULT_SETTINGS)
+    res.json({
+      theme: r.theme,
+      fontPt: r.font_pt,
+      linesPerPage: r.lines_per_page,
+      speedMult: r.speed_mult,
+      timerMin: r.timer_min,
+      lineSpacing: r.line_spacing,
+    })
+  })
+  app.put('/api/settings', authMiddleware, (req, res) => {
+    const s = { ...DEFAULT_SETTINGS, ...(req.body || {}) }
+    db.prepare(
+      `INSERT INTO user_settings(user_id, theme, font_pt, lines_per_page, speed_mult, timer_min, line_spacing)
+       VALUES (@u, @theme, @fontPt, @linesPerPage, @speedMult, @timerMin, @lineSpacing)
+       ON CONFLICT(user_id) DO UPDATE SET
+         theme=@theme, font_pt=@fontPt, lines_per_page=@linesPerPage,
+         speed_mult=@speedMult, timer_min=@timerMin, line_spacing=@lineSpacing`,
+    ).run({ u: req.userId, ...s })
+    res.json({ ok: true })
+  })
+
   // 랭킹: 전체 사용자 지표 (연속일·이번주 분·읽은 글자·완독 수)
   app.get('/api/leaderboard', (_req, res) => {
     const users = db.prepare('SELECT id, name, avatar FROM users').all()

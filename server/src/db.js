@@ -27,6 +27,16 @@ CREATE TABLE IF NOT EXISTS sessions (
   started_at TEXT,
   FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS user_settings (
+  user_id INTEGER PRIMARY KEY,
+  theme TEXT DEFAULT 'dark',
+  font_pt INTEGER DEFAULT 24,
+  lines_per_page INTEGER DEFAULT 4,
+  speed_mult REAL DEFAULT 1.0,
+  timer_min INTEGER DEFAULT 10,
+  line_spacing REAL DEFAULT 1.6,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 `
 
 export function createDb(file = ':memory:') {
