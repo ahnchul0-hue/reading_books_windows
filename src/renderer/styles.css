@@ -102,13 +102,20 @@ input[type="text"] {
   display: flex; justify-content: space-between; align-items: center;
   padding: 0.8rem 1.5rem; font-size: 1rem; color: var(--muted);
 }
+.reading-top #timer { font-size: 1.3rem; font-weight: 700; color: var(--fg); } /* 시간 +3pt */
 .page {
-  flex: 1; position: relative; padding: 2rem 3rem;
+  flex: 1; position: relative; margin: 0 1.5rem 1.2rem; padding: 2rem 2.5rem;
   display: flex; flex-direction: column; justify-content: center; gap: 0.6em;
+  border: 2px solid var(--muted); border-radius: 16px; /* 본문 외곽 박스 */
 }
-.line { position: relative; white-space: pre; line-height: 1.6; }
+.line { position: relative; z-index: 1; white-space: pre; line-height: 1.6; }
+/* 현재 줄 배경 음영: 백그라운드(텍스트 뒤), 은은하게 */
+.line-highlight {
+  position: absolute; left: 0; width: 100%; z-index: 0; pointer-events: none;
+  background: rgba(127, 127, 127, 0.12); border-radius: 6px;
+}
 .sweep-bar {
-  position: absolute; top: 0; left: 0; pointer-events: none;
+  position: absolute; top: 0; left: 0; z-index: 2; pointer-events: none;
   background: rgba(var(--sweep), 0.5); /* 투명도 50% */
   border-radius: 4px; will-change: transform;
 }

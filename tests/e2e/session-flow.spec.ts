@@ -13,15 +13,17 @@ async function launch() {
   const userDataDir = mkdtempSync(join(tmpdir(), 'rt-e2e-'))
   const app = await electron.launch({ args: ['.', `--user-data-dir=${userDataDir}`] })
   const win = await app.firstWindow()
-  await win.waitForSelector('text=누구인가요?')
+  await win.waitForSelector('text=읽기 친구들')
   return { app, win }
 }
 
 async function makeProfileAndText(win: Page): Promise<void> {
-  await win.click('text=새 친구')
+  await win.click('text=새 사용자')
   await win.fill('#nick', '테스터')
   await win.click('#save')
   await win.click('text=테스터')
+  await win.waitForSelector('#cal') // 대시보드
+  await win.click('#start') // 대시보드 → 읽기 시작
   await win.waitForSelector('text=무엇을 읽을까요?')
   await win.fill('#body', STORY)
 }

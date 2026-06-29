@@ -60,20 +60,27 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   pageEl.style.position = 'relative'
   pageEl.style.fontSize = `${settings.fontPt}pt`
 
-  // 글꼴/크기 기준 1줄 최대 글자수 추정 → core.paginate 1차 분할 (D1)
-  const charWidthPx = measureCharWidth(pageEl)
-  const cs = getComputedStyle(pageEl)
-  const avail = pageEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
-  const maxChars = Math.max(4, Math.floor(avail / charWidthPx))
-  const pages = paginate(text.body, settings.linesPerPage, maxChars)
+  // 글꼴/크기·창 크기 기준 1줄 최대 글자수 추정 → core.paginate (반응형)
+  let charWidthPx = measureCharWidth(pageEl)
+  function computePages(): string[][] {
+    charWidthPx = measureCharWidth(pageEl)
+    const cs = getComputedStyle(pageEl)
+    const avail = pageEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
+    const maxChars = Math.max(4, Math.floor(avail / charWidthPx))
+    return paginate(text.body, settings.linesPerPage, maxChars)
+  }
+  let pages = computePages()
 
   // 세션 시작 기록
   const sessionId = await api.session.start(profile.id, text.id ?? null, JSON.stringify(settings))
 
-  // 스윕 바
+  // 현재 줄 배경 음영(백그라운드, 비도드라짐) + 스윕 바
+  const lineHi = document.createElement('div')
+  lineHi.className = 'line-highlight'
+  pageEl.appendChild(lineHi)
   const bar = document.createElement('div')
   bar.className = 'sweep-bar'
-  const barWidth = 1.5 * charWidthPx // 글자폭 1.5배
+  let barWidth = 1.5 * charWidthPx // 글자폭 1.5배
   bar.style.width = `${barWidth}px`
   pageEl.appendChild(bar)
 
@@ -123,11 +130,34 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
       (sp) => sp.getBoundingClientRect().right - pageRect.left,
     )
     timeline = buildLineTimeline([...currentLineText], glyphX, ms)
-    // 바를 현재 줄 위로 이동
+    // 바 + 현재 줄 음영을 현재 줄 위로 이동
     const lineRect = lineEl.getBoundingClientRect()
-    bar.style.top = `${lineRect.top - pageRect.top}px`
+    const top = lineRect.top - pageRect.top
+    bar.style.top = `${top}px`
     bar.style.height = `${lineRect.height}px`
+    lineHi.style.top = `${top}px`
+    lineHi.style.height = `${lineRect.height}px`
   }
+
+  // 창 크기 변경 시 줄글이 화면을 채우도록 재배치
+  let resizeT = 0
+  function relayout(): void {
+    if (phase === 'ended') return
+    pages = computePages()
+    if (pages.length === 0) return
+    if (pageIndex >= pages.length) pageIndex = pages.length - 1
+    if (lineIndex >= pages[pageIndex].length) lineIndex = pages[pageIndex].length - 1
+    barWidth = 1.5 * charWidthPx
+    bar.style.width = `${barWidth}px`
+    renderPage()
+    loadLine()
+    lineElapsedMs = 0
+  }
+  function onResize(): void {
+    window.clearTimeout(resizeT)
+    resizeT = window.setTimeout(relayout, 150)
+  }
+  window.addEventListener('resize', onResize)
 
   function setBarX(x: number): void {
     bar.style.transform = `translateX(${x - barWidth / 2}px)`
@@ -142,6 +172,8 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
     if (phase === 'ended') return
     phase = 'ended'
     cancelAnimationFrame(raf)
+    window.removeEventListener('resize', onResize)
+    window.clearTimeout(resizeT)
     await api.session.finish(sessionId, {
       activeMs: clock.activeMs,
       charsRead,
