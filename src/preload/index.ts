@@ -1,7 +1,7 @@
 // contextIsolation 하에서 안전한 API만 노출 (nodeIntegration OFF).
 import { contextBridge, ipcRenderer } from 'electron'
 import { IPC, type Api } from '../shared/ipc-contract'
-import type { Settings, SessionProgress } from '../shared/types'
+import type { Settings, SessionProgress, ReadingState } from '../shared/types'
 
 const api: Api = {
   profiles: {
@@ -26,6 +26,11 @@ const api: Api = {
     finish: (id: number, progress: SessionProgress) =>
       ipcRenderer.invoke(IPC.sessionFinish, id, progress),
     recent: (profileId: number) => ipcRenderer.invoke(IPC.sessionRecent, profileId),
+  },
+  state: {
+    get: (profileId: number) => ipcRenderer.invoke(IPC.stateGet, profileId),
+    save: (profileId: number, s: ReadingState) => ipcRenderer.invoke(IPC.stateSave, profileId, s),
+    clear: (profileId: number) => ipcRenderer.invoke(IPC.stateClear, profileId),
   },
   quotes: {
     next: (profileId: number) => ipcRenderer.invoke(IPC.quotesNext, profileId),

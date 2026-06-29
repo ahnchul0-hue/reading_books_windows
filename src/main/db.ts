@@ -65,11 +65,28 @@ export function createDb(filename = ':memory:'): Db {
   return db
 }
 
+// 마이그레이션 0002 — 이어읽기 재개 지점(프로필당 1행)
+const MIGRATION_0002 = `
+CREATE TABLE reading_state (
+  profile_id INTEGER PRIMARY KEY,
+  text_id    INTEGER,
+  chars_read INTEGER DEFAULT 0,
+  finished   INTEGER DEFAULT 0,
+  updated_at TEXT,
+  FOREIGN KEY(profile_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  FOREIGN KEY(text_id)    REFERENCES texts(id)    ON DELETE SET NULL
+);
+`
+
 /** user_version으로 누적 마이그레이션. 이미 적용됐으면 건너뛴다(멱등). */
 export function migrate(db: Db): void {
   const version = db.pragma('user_version', { simple: true }) as number
   if (version < 1) {
     db.exec(MIGRATION_0001)
     db.pragma('user_version = 1')
+  }
+  if (version < 2) {
+    db.exec(MIGRATION_0002)
+    db.pragma('user_version = 2')
   }
 }

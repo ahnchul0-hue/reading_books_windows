@@ -3,6 +3,7 @@ import { makeProfileRepo } from './profileRepo'
 import { makeTextRepo } from './textRepo'
 import { makeSessionRepo } from './sessionRepo'
 import { makeQuoteRepo } from './quoteRepo'
+import { makeReadingStateRepo } from './readingStateRepo'
 
 export function makeRepos(db: Db) {
   return {
@@ -10,6 +11,7 @@ export function makeRepos(db: Db) {
     texts: makeTextRepo(db),
     sessions: makeSessionRepo(db),
     quotes: makeQuoteRepo(db),
+    readingState: makeReadingStateRepo(db),
   }
 }
 

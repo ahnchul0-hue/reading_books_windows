@@ -54,5 +54,12 @@ export interface SessionProgress {
   pageReached: number
 }
 
+// 이어읽기용 재개 지점 (레이아웃 비의존: 읽은 글자수 기준)
+export interface ReadingState {
+  textId: number | null
+  charsRead: number // 현재 글에서 읽은 공백제외 글자수
+  finished: boolean
+}
+
 // 명언 타입은 순수 코어(core/quotes)에서 정의한 것을 재사용한다.
 export type { Quote } from '../core/quotes'

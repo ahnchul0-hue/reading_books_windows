@@ -1,4 +1,4 @@
-import type { AppContext } from '../context'
+import type { AppContext, SelectedText } from '../context'
 import { countableLength, msPerChar } from '../../core/cpm'
 import { paginate } from '../../core/paginate'
 import {
@@ -35,7 +35,10 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   }
   const profile = state.profile
   const settings = state.settings
-  const text = state.text
+  // 읽을 글 목록: 주 선택 + 대기열(시간 남으면 이어서)
+  const readList: SelectedText[] = [state.text, ...(state.queue ?? [])]
+  let textIdx = 0
+  let currentText = readList[0]
   const tcfg: RtTest = (window as unknown as { __rtTest?: RtTest }).__rtTest ?? {}
   const totalTimerMs = tcfg.timerMs ?? settings.timerMin * 60000
   const breakIntervalMs = tcfg.breakIntervalMs ?? BREAK_INTERVAL_MS
@@ -67,12 +70,16 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
     const cs = getComputedStyle(pageEl)
     const avail = pageEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight)
     const maxChars = Math.max(4, Math.floor(avail / charWidthPx))
-    return paginate(text.body, settings.linesPerPage, maxChars)
+    return paginate(currentText.body, settings.linesPerPage, maxChars)
   }
   let pages = computePages()
 
   // 세션 시작 기록
-  const sessionId = await api.session.start(profile.id, text.id ?? null, JSON.stringify(settings))
+  const sessionId = await api.session.start(
+    profile.id,
+    currentText.id ?? null,
+    JSON.stringify(settings),
+  )
 
   // 현재 줄 배경 음영(백그라운드, 비도드라짐) + 스윕 바
   const lineHi = document.createElement('div')
@@ -88,6 +95,8 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   let clock: ClockState = createClock(totalTimerMs)
   let activeSinceBreak = 0
   let charsRead = 0
+  let textCharsConsumed = 0 // 현재 글에서 읽은 글자(이어읽기 저장용)
+  let textFinished = false
   let pageReached = 1
   let pageIndex = 0
   let lineIndex = 0
@@ -139,6 +148,30 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
     lineHi.style.height = `${lineRect.height}px`
   }
 
+  // 이어읽기: 읽은 글자수(target)에 해당하는 줄로 위치 이동 (레이아웃 비의존)
+  function positionFromChars(target: number): void {
+    pageIndex = 0
+    lineIndex = 0
+    textCharsConsumed = 0
+    if (target <= 0) return
+    let acc = 0
+    for (let p = 0; p < pages.length; p++) {
+      for (let l = 0; l < pages[p].length; l++) {
+        const c = countableLength(pages[p][l])
+        if (acc + c > target) {
+          pageIndex = p
+          lineIndex = l
+          textCharsConsumed = acc
+          return
+        }
+        acc += c
+      }
+    }
+    pageIndex = pages.length - 1
+    lineIndex = pages[pageIndex].length - 1
+    textCharsConsumed = acc - countableLength(pages[pageIndex][lineIndex])
+  }
+
   // 창 크기 변경 시 줄글이 화면을 채우도록 재배치
   let resizeT = 0
   function relayout(): void {
@@ -178,6 +211,12 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
       activeMs: clock.activeMs,
       charsRead,
       pageReached,
+    })
+    // 이어읽기 재개 지점 저장(현재 글 기준)
+    await api.state.save(profile.id, {
+      textId: currentText.id ?? null,
+      charsRead: textCharsConsumed,
+      finished: textFinished,
     })
     state.lastSummary = {
       charsRead,
@@ -220,14 +259,26 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
     setBarX(sweepXAt(timeline, Math.min(lineElapsedMs, dur)))
 
     if (lineElapsedMs >= dur) {
-      charsRead += countableLength(currentLineText)
+      const lineChars = countableLength(currentLineText)
+      charsRead += lineChars
+      textCharsConsumed += lineChars
       const adv = advanceLine({ pageIndex, lineIndex }, pages)
       if (adv.ended) {
+        textFinished = true
         if (isEnded(clock)) {
           void endSession()
           return
         }
-        // 글을 끝까지 읽었지만 시간이 남음 → 처음부터 반복 (D4)
+        // 글을 끝까지 읽음 + 시간 남음 → 미리 고른 다음 글로 (없으면 종료)
+        textIdx++
+        if (textIdx >= readList.length) {
+          void endSession()
+          return
+        }
+        currentText = readList[textIdx]
+        pages = computePages()
+        textFinished = false
+        textCharsConsumed = 0
         pageIndex = 0
         lineIndex = 0
         renderPage()
@@ -272,7 +323,9 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   pauseBtn.addEventListener('click', togglePause)
   ;(root.querySelector('#quit') as HTMLElement).addEventListener('click', () => void endSession())
 
-  // 초기 렌더 + 시작
+  // 초기 렌더 + 시작 (이어읽기면 저장된 글자수 위치로)
+  positionFromChars(state.resumeChars ?? 0)
+  pageReached = pageIndex + 1
   renderPage()
   loadLine()
   updateTopUI()
