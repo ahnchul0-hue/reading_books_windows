@@ -51,9 +51,29 @@ h2 { font-size: 1.4rem; margin: 0; }
 .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
 
 /* 선택 그룹 (옵션 토글) */
-.options { display: flex; flex-wrap: wrap; gap: 1rem; }
 .option-group { display: flex; flex-direction: column; gap: 0.4rem; }
 .option-group .row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+/* 시작 화면 옵션: 개별 박스 카드 + 열·행 정렬 */
+.options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(116px, 1fr));
+  gap: 0.8rem;
+  align-items: stretch;
+}
+.options .option-group {
+  background: var(--panel);
+  border: 1px solid rgba(127, 127, 127, 0.25);
+  border-radius: 14px;
+  padding: 0.8rem 0.5rem;
+  display: grid;
+  grid-template-rows: auto 1fr; /* 라벨 행 정렬 + 컨트롤 행 가운데 */
+  gap: 0.6rem;
+  justify-items: center;
+  align-items: center;
+  text-align: center;
+}
+.options .option-group > label { font-size: 0.9rem; font-weight: 700; color: var(--muted); }
 .chip {
   font: inherit; font-size: 1.05rem; padding: 0.6rem 1rem;
   border: 2px solid var(--muted); border-radius: 12px;
