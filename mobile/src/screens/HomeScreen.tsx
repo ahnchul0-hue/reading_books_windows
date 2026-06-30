@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput } from 'react-native'
 import {
   api,
-  COLORS,
   type CloudUser,
   type LeaderRow,
   type TextRow,
@@ -12,6 +11,7 @@ import {
 } from '../api'
 import { CATEGORIES, UNCATEGORIZED, catFor } from '../categories'
 import { cue, setSoundPrefs } from '../sound'
+import { useColors, type Colors } from '../theme'
 import type { Nav } from '../../App'
 
 const METRICS = [
@@ -22,7 +22,9 @@ const METRICS = [
 ] as const
 type MetricKey = (typeof METRICS)[number]['key']
 
-export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
+export function HomeScreen({ nav, user, onTheme }: { nav: Nav; user: CloudUser; onTheme: (t: string) => void }) {
+  const c = useColors()
+  const s = makeStyles(c)
   const [board, setBoard] = useState<LeaderRow[]>([])
   const [texts, setTexts] = useState<TextRow[]>([])
   const [metric, setMetric] = useState<MetricKey>('weekMinutes')
@@ -57,6 +59,7 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
       setFont(st.fontPt)
       setLineSpace(st.lineSpacing)
       setSoundPrefs(st.soundOn, st.hapticOn)
+      onTheme(st.theme)
     } catch {
       /* ignore */
     }
@@ -104,15 +107,20 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
         <Text style={s.h1}>
           {user.avatar ?? '🙂'} {user.name}
         </Text>
-        <TouchableOpacity
-          style={s.btn}
-          onPress={() => {
-            api.logout()
-            nav.toLogin()
-          }}
-        >
-          <Text style={s.btnT}>나가기</Text>
-        </TouchableOpacity>
+        <View style={s.row}>
+          <TouchableOpacity style={s.btn} onPress={() => nav.toSettings()}>
+            <Text style={s.btnT}>⚙ 설정</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={s.btn}
+            onPress={() => {
+              api.logout()
+              nav.toLogin()
+            }}
+          >
+            <Text style={s.btnT}>나가기</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 이어서 / 새로 읽기 */}
@@ -295,14 +303,14 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
               value={title}
               onChangeText={setTitle}
               placeholder="제목 (선택)"
-              placeholderTextColor={COLORS.muted}
+              placeholderTextColor={c.muted}
             />
             <TextInput
               style={[s.input, { height: 140, textAlignVertical: 'top' }]}
               value={body}
               onChangeText={setBody}
               placeholder="여기에 글을 붙여넣어요"
-              placeholderTextColor={COLORS.muted}
+              placeholderTextColor={c.muted}
               multiline
             />
             <Text style={s.optLabel}>종류</Text>
@@ -348,6 +356,7 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
 }
 
 function Stat({ n, label }: { n: number; label: string }) {
+  const s = makeStyles(useColors())
   return (
     <View style={s.stat}>
       <Text style={s.statN}>{n}</Text>
@@ -356,52 +365,53 @@ function Stat({ n, label }: { n: number; label: string }) {
   )
 }
 
-const s = StyleSheet.create({
+const makeStyles = (c: Colors) =>
+  StyleSheet.create({
   wrap: { padding: 24, gap: 16 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  h1: { color: COLORS.fg, fontSize: 26, fontWeight: '800' },
-  h2: { color: COLORS.fg, fontSize: 20, fontWeight: '800' },
-  muted: { color: COLORS.muted, fontSize: 14 },
+  h1: { color: c.fg, fontSize: 26, fontWeight: '800' },
+  h2: { color: c.fg, fontSize: 20, fontWeight: '800' },
+  muted: { color: c.muted, fontSize: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   actions: { flexDirection: 'row', gap: 12 },
-  bigBtn: { flex: 1, backgroundColor: COLORS.panel, borderRadius: 16, padding: 16, gap: 4 },
-  bigT: { color: COLORS.fg, fontSize: 18, fontWeight: '800' },
-  bigSub: { color: COLORS.muted, fontSize: 13 },
+  bigBtn: { flex: 1, backgroundColor: c.panel, borderRadius: 16, padding: 16, gap: 4 },
+  bigT: { color: c.fg, fontSize: 18, fontWeight: '800' },
+  bigSub: { color: c.muted, fontSize: 13 },
   statsRow: { flexDirection: 'row', gap: 10 },
-  stat: { flex: 1, backgroundColor: COLORS.panel, borderRadius: 14, padding: 12, alignItems: 'center' },
-  statN: { color: COLORS.fg, fontSize: 24, fontWeight: '800' },
-  statL: { color: COLORS.muted, fontSize: 12, marginTop: 2 },
-  panel: { backgroundColor: COLORS.panel, borderRadius: 16, padding: 16, gap: 8 },
-  panelT: { color: COLORS.fg, fontSize: 18, fontWeight: '800' },
+  stat: { flex: 1, backgroundColor: c.panel, borderRadius: 14, padding: 12, alignItems: 'center' },
+  statN: { color: c.fg, fontSize: 24, fontWeight: '800' },
+  statL: { color: c.muted, fontSize: 12, marginTop: 2 },
+  panel: { backgroundColor: c.panel, borderRadius: 16, padding: 16, gap: 8 },
+  panelT: { color: c.fg, fontSize: 18, fontWeight: '800' },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { borderWidth: 2, borderColor: COLORS.muted, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
-  chipSel: { backgroundColor: COLORS.accent, borderColor: COLORS.accent },
-  chipT: { color: COLORS.fg, fontSize: 13, fontWeight: '700' },
+  chip: { borderWidth: 2, borderColor: c.muted, borderRadius: 999, paddingVertical: 6, paddingHorizontal: 12 },
+  chipSel: { backgroundColor: c.accent, borderColor: c.accent },
+  chipT: { color: c.fg, fontSize: 13, fontWeight: '700' },
   lrow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 5 },
   lrowMe: { backgroundColor: 'rgba(96,165,250,0.18)', borderRadius: 8 },
-  lrank: { width: 26, textAlign: 'center', color: COLORS.fg, fontSize: 16 },
+  lrank: { width: 26, textAlign: 'center', color: c.fg, fontSize: 16 },
   lava: { fontSize: 20, width: 26, textAlign: 'center' },
-  lname: { flex: 1, color: COLORS.fg, fontWeight: '700' },
+  lname: { flex: 1, color: c.fg, fontWeight: '700' },
   lbar: { width: 90, height: 12, backgroundColor: 'rgba(127,127,127,0.2)', borderRadius: 999, overflow: 'hidden' },
-  lbarFill: { height: '100%', backgroundColor: COLORS.accent, borderRadius: 999 },
-  lval: { width: 48, textAlign: 'right', color: COLORS.fg, fontWeight: '800' },
-  cheer: { color: COLORS.fg, fontSize: 15, marginTop: 4 },
+  lbarFill: { height: '100%', backgroundColor: c.accent, borderRadius: 999 },
+  lval: { width: 48, textAlign: 'right', color: c.fg, fontWeight: '800' },
+  cheer: { color: c.fg, fontSize: 15, marginTop: 4 },
   // 트리
-  treeNode: { backgroundColor: COLORS.panel, borderRadius: 14, overflow: 'hidden' },
+  treeNode: { backgroundColor: c.panel, borderRadius: 14, overflow: 'hidden' },
   treeHead: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
   circle: { width: 22, height: 22, borderRadius: 11 },
   treeEmoji: { fontSize: 18 },
-  treeName: { color: COLORS.fg, fontSize: 16, fontWeight: '800' },
-  treeCount: { color: COLORS.muted, fontSize: 13 },
-  treeChev: { marginLeft: 'auto', color: COLORS.muted, fontSize: 16 },
-  treeItem: { backgroundColor: COLORS.bg, marginHorizontal: 12, marginBottom: 10, padding: 12, borderRadius: 10, borderLeftWidth: 5, gap: 2 },
-  treeItemTitle: { color: COLORS.fg, fontSize: 16, fontWeight: '700' },
-  btn: { backgroundColor: COLORS.panel, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16 },
-  btnT: { color: COLORS.fg, fontSize: 15, fontWeight: '700' },
+  treeName: { color: c.fg, fontSize: 16, fontWeight: '800' },
+  treeCount: { color: c.muted, fontSize: 13 },
+  treeChev: { marginLeft: 'auto', color: c.muted, fontSize: 16 },
+  treeItem: { backgroundColor: c.bg, marginHorizontal: 12, marginBottom: 10, padding: 12, borderRadius: 10, borderLeftWidth: 5, gap: 2 },
+  treeItemTitle: { color: c.fg, fontSize: 16, fontWeight: '700' },
+  btn: { backgroundColor: c.panel, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16 },
+  btnT: { color: c.fg, fontSize: 15, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
-  primary: { backgroundColor: COLORS.accent },
+  primary: { backgroundColor: c.accent },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
-  modalBox: { backgroundColor: COLORS.panel, borderRadius: 20, padding: 24, gap: 14, width: 420 },
-  input: { backgroundColor: COLORS.bg, color: COLORS.fg, borderRadius: 12, padding: 14, fontSize: 16 },
-  optLabel: { color: COLORS.muted, fontSize: 14, fontWeight: '700', marginTop: 4 },
+  modalBox: { backgroundColor: c.panel, borderRadius: 20, padding: 24, gap: 14, width: 420 },
+  input: { backgroundColor: c.bg, color: c.fg, borderRadius: 12, padding: 14, fontSize: 16 },
+  optLabel: { color: c.muted, fontSize: 14, fontWeight: '700', marginTop: 4 },
 })

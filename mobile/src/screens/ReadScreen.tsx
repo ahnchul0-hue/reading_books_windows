@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native'
-import { api, COLORS, type TextRow, type ReadOpts } from '../api'
+import { api, type TextRow, type ReadOpts } from '../api'
 import { cue } from '../sound'
+import { useColors, type Colors } from '../theme'
 import type { Nav } from '../../App'
 
 const countable = (s: string) => [...s].filter((c) => !/\s/.test(c)).length
@@ -30,6 +31,8 @@ function wrap(text: string, maxChars: number): string[] {
 }
 
 export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts: ReadOpts }) {
+  const col = useColors()
+  const s = makeStyles(col)
   const fontSize = opts.fontSize
   const lineH = Math.round(fontSize * (opts.lineSpacing || 1.6))
   const charW = fontSize // 한글 한 글자 폭 근사
@@ -160,7 +163,7 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
         <ScrollView ref={scrollRef} contentContainerStyle={{ padding: 16 }}>
           {lines.map((ln, i) => (
             <View key={i} style={[s.lineRow, { height: lineH }, i === idx && s.lineCur]}>
-              <Text style={{ fontSize, lineHeight: lineH, color: i <= idx ? COLORS.fg : COLORS.muted }}>
+              <Text style={{ fontSize, lineHeight: lineH, color: i <= idx ? col.fg : col.muted }}>
                 {ln}
               </Text>
               {i === idx && (
@@ -183,16 +186,17 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
   )
 }
 
-const s = StyleSheet.create({
+const makeStyles = (col: Colors) =>
+  StyleSheet.create({
   wrap: { flex: 1, padding: 24, gap: 16 },
   topRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  h1: { color: COLORS.fg, fontSize: 26, fontWeight: '800' },
-  muted: { color: COLORS.muted, fontSize: 15 },
-  box: { flex: 1, backgroundColor: COLORS.panel, borderRadius: 16, borderWidth: 2, borderColor: '#3a4256' },
+  h1: { color: col.fg, fontSize: 26, fontWeight: '800' },
+  muted: { color: col.muted, fontSize: 15 },
+  box: { flex: 1, backgroundColor: col.panel, borderRadius: 16, borderWidth: 2, borderColor: '#3a4256' },
   lineRow: { position: 'relative', justifyContent: 'center' },
   lineCur: { backgroundColor: 'rgba(127,127,127,0.16)', borderRadius: 8 }, // 현재 줄 배경(은은)
   bar: { position: 'absolute', left: 0, top: 0, backgroundColor: 'rgba(240,198,116,0.5)', borderRadius: 4 },
-  btn: { backgroundColor: COLORS.panel, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
-  btnT: { color: COLORS.fg, fontSize: 17, fontWeight: '800' },
-  primary: { backgroundColor: COLORS.accent },
+  btn: { backgroundColor: col.panel, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
+  btnT: { color: col.fg, fontSize: 17, fontWeight: '800' },
+  primary: { backgroundColor: col.accent },
 })
