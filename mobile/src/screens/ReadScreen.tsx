@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Animated } from 'react-native'
 import { api, COLORS, type TextRow, type ReadOpts } from '../api'
+import { cue } from '../sound'
 import type { Nav } from '../../App'
 
 const countable = (s: string) => [...s].filter((c) => !/\s/.test(c)).length
@@ -70,6 +71,7 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
     } catch {
       /* 오프라인 */
     }
+    cue.end() // 끝(완독) 효과음
   }
 
   const exitSave = async () => {
@@ -102,6 +104,8 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
       setIdx(start)
     }
     setReady(true)
+    cue.start() // 시작 효과음
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lines.length])
 

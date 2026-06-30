@@ -19,6 +19,7 @@ import {
 } from '../../core/sessionClock'
 import { BREAK_INTERVAL_MS } from '../../core/breakScheduler'
 import { showBreak } from './BreakScreen'
+import { sound } from '../sound'
 
 // 테스트 전용 시seam: 설정 시 타이머/휴식 시간을 단축. 미설정이면 실제 값 사용.
 interface RtTest {
@@ -238,6 +239,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   async function endSession(): Promise<void> {
     if (phase === 'ended') return
     phase = 'ended'
+    sound.end() // 끝 효과음
     cancelAnimationFrame(raf)
     window.removeEventListener('resize', onResize)
     window.clearTimeout(resizeT)
@@ -389,6 +391,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   renderPage()
   loadLine()
   updateTopUI()
+  sound.start() // 시작 효과음
   raf = requestAnimationFrame(frame)
 }
 

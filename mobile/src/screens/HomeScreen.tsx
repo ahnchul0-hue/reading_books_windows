@@ -11,6 +11,7 @@ import {
   type ReadingProgress,
 } from '../api'
 import { CATEGORIES, UNCATEGORIZED, catFor } from '../categories'
+import { cue, setSoundPrefs } from '../sound'
 import type { Nav } from '../../App'
 
 const METRICS = [
@@ -55,6 +56,7 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
       setSpeed(st.speedMult)
       setFont(st.fontPt)
       setLineSpace(st.lineSpacing)
+      setSoundPrefs(st.soundOn, st.hapticOn)
     } catch {
       /* ignore */
     }
@@ -235,7 +237,10 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
                 <TouchableOpacity
                   key={v}
                   style={[s.chip, speed === v && s.chipSel]}
-                  onPress={() => setSpeed(v)}
+                  onPress={() => {
+                    cue.select()
+                    setSpeed(v)
+                  }}
                 >
                   <Text style={[s.chipT, speed === v && { color: '#fff' }]}>{v.toFixed(1)}×</Text>
                 </TouchableOpacity>
@@ -243,21 +248,21 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
             </View>
             <Text style={s.optLabel}>글자 크기</Text>
             <View style={s.row}>
-              <TouchableOpacity style={s.btn} onPress={() => setFont((f) => Math.max(20, f - 2))}>
+              <TouchableOpacity style={s.btn} onPress={() => { cue.select(); setFont((f) => Math.max(20, f - 2)) }}>
                 <Text style={s.btnT}>－</Text>
               </TouchableOpacity>
               <Text style={[s.btnT, { minWidth: 64, textAlign: 'center' }]}>{font}pt</Text>
-              <TouchableOpacity style={s.btn} onPress={() => setFont((f) => Math.min(44, f + 2))}>
+              <TouchableOpacity style={s.btn} onPress={() => { cue.select(); setFont((f) => Math.min(44, f + 2)) }}>
                 <Text style={s.btnT}>＋</Text>
               </TouchableOpacity>
             </View>
             <Text style={s.optLabel}>줄 간격</Text>
             <View style={s.row}>
-              <TouchableOpacity style={s.btn} onPress={() => setLineSpace((v) => Math.max(1.2, Math.round((v - 0.2) * 10) / 10))}>
+              <TouchableOpacity style={s.btn} onPress={() => { cue.select(); setLineSpace((v) => Math.max(1.2, Math.round((v - 0.2) * 10) / 10)) }}>
                 <Text style={s.btnT}>－</Text>
               </TouchableOpacity>
               <Text style={[s.btnT, { minWidth: 64, textAlign: 'center' }]}>{lineSpace.toFixed(1)}</Text>
-              <TouchableOpacity style={s.btn} onPress={() => setLineSpace((v) => Math.min(2.4, Math.round((v + 0.2) * 10) / 10))}>
+              <TouchableOpacity style={s.btn} onPress={() => { cue.select(); setLineSpace((v) => Math.min(2.4, Math.round((v + 0.2) * 10) / 10)) }}>
                 <Text style={s.btnT}>＋</Text>
               </TouchableOpacity>
             </View>
@@ -306,7 +311,10 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
                 <TouchableOpacity
                   key={c.name}
                   style={[s.chip, saveCat === c.name && s.chipSel]}
-                  onPress={() => setSaveCat(c.name)}
+                  onPress={() => {
+                    cue.select()
+                    setSaveCat(c.name)
+                  }}
                 >
                   <Text style={[s.chipT, saveCat === c.name && { color: '#fff' }]}>
                     {c.emoji} {c.name}

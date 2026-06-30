@@ -1,4 +1,5 @@
 // 접이식(기본 접힘) 옵션 메뉴 헬퍼 — 사용자가 펼쳐서 선택.
+import { sound } from './sound'
 
 /** 접이식 옵션: 머리(라벨·현재값)를 누르면 +/- 스테퍼가 펼쳐진다. 기본은 접힘. */
 export function collapsibleStepper(
@@ -43,10 +44,12 @@ export function collapsibleStepper(
     drawHead()
   }
   minus.addEventListener('click', () => {
+    sound.select()
     onStep(-1)
     draw()
   })
   plus.addEventListener('click', () => {
+    sound.select()
     onStep(+1)
     draw()
   })
@@ -96,6 +99,7 @@ export function collapsibleToggle(
   }
   const drawBtn = () => (btn.textContent = valueText())
   btn.addEventListener('click', () => {
+    sound.select()
     onToggle()
     drawBtn()
     drawHead()

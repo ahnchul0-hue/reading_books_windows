@@ -51,6 +51,18 @@ export function renderSettingsScreen(ctx: AppContext): void {
       persist()
     }),
   )
+  opts.appendChild(
+    collapsibleToggle('효과음', () => (settings.soundOn ? '🔔 켜짐' : '🔕 꺼짐'), () => {
+      settings.soundOn = !settings.soundOn
+      persist()
+    }),
+  )
+  opts.appendChild(
+    collapsibleToggle('진동(아이패드)', () => (settings.hapticOn ? '📳 켜짐' : '꺼짐'), () => {
+      settings.hapticOn = !settings.hapticOn
+      persist()
+    }),
+  )
 
   ;(root.querySelector('#back') as HTMLElement).addEventListener('click', () => nav.toDashboard())
 }
