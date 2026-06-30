@@ -16,7 +16,8 @@ export type LeaderRow = {
   completedCount: number
 }
 export type TextRow = { id: number; title: string; body: string; category: string | null }
-export type ReadOpts = { speedMult: number; fontSize: number; lineSpacing: number }
+export type ReadingProgress = { textId: number; charsRead: number; title: string }
+export type ReadOpts = { speedMult: number; fontSize: number; lineSpacing: number; resumeChars?: number }
 export type Settings = {
   theme: string
   fontPt: number
@@ -80,6 +81,11 @@ export const api = {
   leaderboard: () => call<LeaderRow[]>('/api/leaderboard'),
   getSettings: () => call<Settings>('/api/settings', { auth: true }),
   saveSettings: (s: Settings) => call('/api/settings', { method: 'PUT', auth: true, body: s }),
+  deleteUser: (id: number, adminPin: string) =>
+    call(`/api/users/${id}`, { method: 'DELETE', body: { adminPin } }),
+  getProgress: () => call<ReadingProgress | null>('/api/me/progress', { auth: true }),
+  saveProgress: (p: ReadingProgress | { textId: null }) =>
+    call('/api/me/progress', { method: 'PUT', auth: true, body: p }),
 }
 
 export const COLORS = {

@@ -208,6 +208,32 @@ input[type="text"] {
 .swatch { width: 2.2rem; height: 2.2rem; border-radius: 50%; border: 3px solid transparent; cursor: pointer; }
 .swatch.selected { border-color: var(--fg); }
 
+/* 사용자 관리 */
+.manage-list { display: flex; flex-direction: column; gap: 0.6rem; max-width: 520px; margin: 0.5rem 0; }
+.manage-row { display: flex; align-items: center; gap: 0.8rem; background: var(--panel); border-radius: 12px; padding: 0.8rem 1rem; cursor: pointer; }
+.manage-row input { width: 1.2rem; height: 1.2rem; }
+.manage-row .avatar-sm { font-size: 1.6rem; }
+.manage-row .uname { font-weight: 700; }
+.btn-danger { background: #ef4444; color: #fff; }
+
+/* 대시보드: 이어서/새로 읽기 + 카테고리 트리 */
+.main-actions { display: flex; gap: 1rem; }
+.main-actions .btn-lg { flex: 1; }
+.btn .sub { display: block; font-size: 0.8rem; font-weight: 500; opacity: 0.85; margin-top: 2px; }
+.cat-tree { display: flex; flex-direction: column; gap: 0.6rem; }
+.tree-node { background: var(--panel); border-radius: 14px; overflow: hidden; }
+.tree-head { width: 100%; display: flex; align-items: center; gap: 0.7rem; background: transparent; border: none; color: var(--fg); font: inherit; padding: 0.9rem 1rem; cursor: pointer; text-align: left; }
+.tree-circle { width: 1.5rem; height: 1.5rem; border-radius: 50%; flex: none; box-shadow: 0 0 0 3px rgba(255,255,255,0.08); }
+.tree-emoji { font-size: 1.2rem; }
+.tree-name { font-weight: 800; }
+.tree-count { color: var(--muted); font-size: 0.85rem; }
+.tree-chev { margin-left: auto; color: var(--muted); }
+.tree-body { padding: 0 0.8rem 0.8rem; display: flex; flex-direction: column; gap: 0.5rem; }
+.tree-item { background: var(--bg); border-radius: 10px; padding: 0.7rem 0.9rem; cursor: pointer; }
+.tree-item:hover { outline: 2px solid var(--accent); }
+.tree-item-title { font-weight: 700; }
+.tree-item-prev { color: var(--muted); font-size: 0.85rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* 접이식 메뉴(기본 접힘) */
 .options-col { display: flex; flex-direction: column; gap: 0.6rem; max-width: 520px; }
 .collapsible { background: var(--panel); border-radius: 12px; overflow: hidden; }

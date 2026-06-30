@@ -36,7 +36,7 @@ async function renderCloudHome(ctx: AppContext): Promise<void> {
         <h1>📖 읽기 친구들</h1>
         <div class="row">
           <button class="btn" id="settings">⚙ 서버</button>
-          <button class="btn btn-primary" id="add">＋ 새 사용자</button>
+          <button class="btn btn-primary" id="manage">👥 사용자 관리</button>
         </div>
       </div>
       <p class="muted">친구를 고르고 비밀번호(4자리)를 눌러요. 🟢 서버 연결됨 — 친구들과 비교할 수 있어요.</p>
@@ -44,7 +44,7 @@ async function renderCloudHome(ctx: AppContext): Promise<void> {
     </section>`
 
   const cards = root.querySelector('#cards') as HTMLElement
-  ;(root.querySelector('#add') as HTMLElement).addEventListener('click', () => renderNewCloudUser(ctx))
+  ;(root.querySelector('#manage') as HTMLElement).addEventListener('click', () => renderUserManagement(ctx))
   ;(root.querySelector('#settings') as HTMLElement).addEventListener('click', () =>
     renderServerSettings(ctx),
   )
@@ -123,6 +123,62 @@ function renderNewCloudUser(ctx: AppContext): void {
     }
   })
   nick.focus()
+}
+
+// --- 사용자 관리(등록 + 라디오 선택 삭제, 관리자 PIN) ---
+async function renderUserManagement(ctx: AppContext): Promise<void> {
+  const { root, api } = ctx
+  const users = await api.cloud.users().catch(() => [] as CloudUser[])
+  let selectedId: number | null = users[0]?.id ?? null
+  root.innerHTML = `
+    <section class="screen">
+      <div class="row-between">
+        <h1>👥 사용자 관리</h1>
+        <button class="btn" id="back">← 뒤로</button>
+      </div>
+      <p class="muted">새 사용자를 등록하거나, 사용자를 골라 삭제할 수 있어요. 삭제에는 관리자 비밀번호가 필요해요.</p>
+      <div class="manage-list" id="ulist"></div>
+      <div class="row">
+        <button class="btn btn-primary" id="add">＋ 새 사용자 등록</button>
+        <button class="btn btn-danger" id="del">선택 삭제</button>
+      </div>
+    </section>`
+  const list = root.querySelector('#ulist') as HTMLElement
+  if (users.length === 0) {
+    list.innerHTML = `<p class="muted">등록된 사용자가 없어요. “＋ 새 사용자 등록”으로 만들어요.</p>`
+  }
+  for (const u of users) {
+    const row = document.createElement('label')
+    row.className = 'manage-row'
+    row.innerHTML = `<input type="radio" name="usel" /><span class="avatar-sm"></span><span class="uname"></span>`
+    const radio = row.querySelector('input') as HTMLInputElement
+    radio.checked = u.id === selectedId
+    radio.addEventListener('change', () => {
+      selectedId = u.id
+    })
+    ;(row.querySelector('.avatar-sm') as HTMLElement).textContent = u.avatar ?? '🙂'
+    ;(row.querySelector('.uname') as HTMLElement).textContent = u.name
+    list.appendChild(row)
+  }
+  ;(root.querySelector('#back') as HTMLElement).addEventListener('click', () => renderProfileScreen(ctx))
+  ;(root.querySelector('#add') as HTMLElement).addEventListener('click', () => renderNewCloudUser(ctx))
+  ;(root.querySelector('#del') as HTMLElement).addEventListener('click', async () => {
+    if (selectedId == null) {
+      alert('삭제할 사용자를 골라요.')
+      return
+    }
+    const target = users.find((u) => u.id === selectedId)
+    if (!target) return
+    if (!confirm(`'${target.name}' 사용자의 글·기록이 모두 지워져요. 계속할까요?`)) return
+    const pin = await showPinPad('관리자 비밀번호')
+    if (!pin) return
+    try {
+      await api.cloud.deleteUser(selectedId, pin)
+      void renderUserManagement(ctx)
+    } catch {
+      alert('관리자 비밀번호가 달라요.')
+    }
+  })
 }
 
 // --- 서버 주소 설정 ---

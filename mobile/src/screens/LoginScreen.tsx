@@ -9,8 +9,10 @@ const AVATARS = ['🐰', '🦊', '🐼', '🐯', '🐸', '🐧', '🐬', '🦉',
 export function LoginScreen({ nav, onLogin }: { nav: Nav; onLogin: (u: CloudUser) => void }) {
   const [online, setOnline] = useState<boolean | null>(null)
   const [users, setUsers] = useState<CloudUser[]>([])
-  const [mode, setMode] = useState<'list' | 'create'>('list')
+  const [mode, setMode] = useState<'list' | 'create' | 'manage'>('list')
   const [pinFor, setPinFor] = useState<CloudUser | null>(null) // 로그인 PIN
+  const [selectedId, setSelectedId] = useState<number | null>(null) // 관리: 선택
+  const [adminDel, setAdminDel] = useState(false) // 관리자 PIN 삭제
 
   // 새 사용자
   const [newName, setNewName] = useState('')
@@ -117,6 +119,62 @@ export function LoginScreen({ nav, onLogin }: { nav: Nav; onLogin: (u: CloudUser
     )
   }
 
+  // 사용자 관리 (라디오 선택 + 등록 + 관리자 PIN 삭제)
+  if (mode === 'manage') {
+    return (
+      <ScrollView contentContainerStyle={s.wrap}>
+        <View style={s.headerRow}>
+          <Text style={s.h1}>👥 사용자 관리</Text>
+          <TouchableOpacity style={s.btn} onPress={() => setMode('list')}>
+            <Text style={s.btnT}>← 뒤로</Text>
+          </TouchableOpacity>
+        </View>
+        <Text style={s.muted}>새 사용자를 등록하거나, 사용자를 골라 삭제할 수 있어요. 삭제에는 관리자 비밀번호가 필요해요.</Text>
+        {users.map((u) => (
+          <TouchableOpacity key={u.id} style={s.manageRow} onPress={() => setSelectedId(u.id)}>
+            <View style={[s.radio, selectedId === u.id && s.radioOn]} />
+            <Text style={s.avatarSm}>{u.avatar ?? '🙂'}</Text>
+            <Text style={s.name}>{u.name}</Text>
+          </TouchableOpacity>
+        ))}
+        {users.length === 0 && <Text style={s.muted}>등록된 사용자가 없어요.</Text>}
+        <View style={s.row}>
+          <TouchableOpacity style={[s.btn, s.primary]} onPress={() => setMode('create')}>
+            <Text style={[s.btnT, { color: '#fff' }]}>＋ 새 사용자 등록</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[s.btn, s.danger]}
+            onPress={() => {
+              if (selectedId == null) {
+                Alert.alert('선택 필요', '삭제할 사용자를 골라요.')
+                return
+              }
+              setAdminDel(true)
+            }}
+          >
+            <Text style={[s.btnT, { color: '#fff' }]}>선택 삭제</Text>
+          </TouchableOpacity>
+        </View>
+        <PinPad
+          visible={adminDel}
+          title="관리자 비밀번호"
+          onCancel={() => setAdminDel(false)}
+          onDone={async (pin) => {
+            setAdminDel(false)
+            if (selectedId == null) return
+            try {
+              await api.deleteUser(selectedId, pin)
+              setSelectedId(null)
+              setUsers(await api.users())
+            } catch {
+              Alert.alert('삭제 실패', '관리자 비밀번호가 달라요.')
+            }
+          }}
+        />
+      </ScrollView>
+    )
+  }
+
   // 사용자 목록
   return (
     <ScrollView contentContainerStyle={s.wrap}>
@@ -126,8 +184,8 @@ export function LoginScreen({ nav, onLogin }: { nav: Nav; onLogin: (u: CloudUser
           <TouchableOpacity style={s.btn} onPress={() => nav.toServer()}>
             <Text style={s.btnT}>⚙ 서버</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[s.btn, s.primary]} onPress={() => setMode('create')}>
-            <Text style={[s.btnT, { color: '#fff' }]}>＋ 새 사용자</Text>
+          <TouchableOpacity style={[s.btn, s.primary]} onPress={() => setMode('manage')}>
+            <Text style={[s.btnT, { color: '#fff' }]}>👥 사용자 관리</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -189,4 +247,16 @@ const s = StyleSheet.create({
   btnT: { color: COLORS.fg, fontSize: 15, fontWeight: '700' },
   btnDisabled: { opacity: 0.5 },
   primary: { backgroundColor: COLORS.accent },
+  danger: { backgroundColor: '#ef4444' },
+  manageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: COLORS.panel,
+    borderRadius: 12,
+    padding: 14,
+  },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: COLORS.muted },
+  radioOn: { borderColor: COLORS.accent, backgroundColor: COLORS.accent },
+  avatarSm: { fontSize: 28 },
 })

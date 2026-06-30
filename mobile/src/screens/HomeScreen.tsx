@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, TextInput } from 'react-native'
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Modal,
-  TextInput,
-} from 'react-native'
-import { api, COLORS, type CloudUser, type LeaderRow, type TextRow, type ReadOpts, type Settings } from '../api'
+  api,
+  COLORS,
+  type CloudUser,
+  type LeaderRow,
+  type TextRow,
+  type ReadOpts,
+  type Settings,
+  type ReadingProgress,
+} from '../api'
+import { CATEGORIES, UNCATEGORIZED, catFor } from '../categories'
 import type { Nav } from '../../App'
 
 const METRICS = [
@@ -26,6 +28,9 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
   const [adding, setAdding] = useState(false)
   const [title, setTitle] = useState('')
   const [body, setBody] = useState('')
+  const [saveCat, setSaveCat] = useState<string>('내 글')
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+  const [progress, setProgress] = useState<ReadingProgress | null>(null)
   // 읽기 옵션 팝업
   const [optText, setOptText] = useState<TextRow | null>(null)
   const [speed, setSpeed] = useState(1.0)
@@ -53,6 +58,11 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
     } catch {
       /* ignore */
     }
+    try {
+      setProgress(await api.getProgress())
+    } catch {
+      /* ignore */
+    }
   }
   useEffect(() => {
     load()
@@ -64,6 +74,25 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
   const meIdx = sorted.findIndex((r) => r.userId === user.id)
   const unit = METRICS.find((m) => m.key === metric)!.unit
   const medals = ['🥇', '🥈', '🥉']
+
+  const resumeText = progress ? texts.find((t) => t.id === progress.textId) : undefined
+  const groups = [...CATEGORIES, UNCATEGORIZED]
+    .map((c) => ({ cat: c, items: texts.filter((t) => catFor(t.category).name === c.name) }))
+    .filter((g) => g.items.length > 0)
+
+  const startRead = (t: TextRow, resumeChars?: number) => {
+    const o: ReadOpts = { speedMult: speed, fontSize: font, lineSpacing: lineSpace, resumeChars }
+    const base = baseSettings ?? {
+      theme: 'dark',
+      fontPt: font,
+      linesPerPage: 4,
+      speedMult: speed,
+      timerMin: 10,
+      lineSpacing: lineSpace,
+    }
+    void api.saveSettings({ ...base, fontPt: font, speedMult: speed, lineSpacing: lineSpace }).catch(() => {})
+    nav.toRead(t, o)
+  }
 
   return (
     <ScrollView contentContainerStyle={s.wrap}>
@@ -81,6 +110,68 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
           <Text style={s.btnT}>나가기</Text>
         </TouchableOpacity>
       </View>
+
+      {/* 이어서 / 새로 읽기 */}
+      <View style={s.actions}>
+        <TouchableOpacity
+          style={[s.bigBtn, s.primary, !resumeText && s.btnDisabled]}
+          disabled={!resumeText}
+          onPress={() => resumeText && startRead(resumeText, progress?.charsRead)}
+        >
+          <Text style={[s.bigT, { color: '#fff' }]}>▶ 이어서 읽기</Text>
+          <Text style={s.bigSub}>{resumeText ? resumeText.title || '제목 없음' : '최근 읽던 글 없음'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={s.bigBtn}
+          onPress={() => setExpanded(new Set(groups.map((g) => g.cat.name)))}
+        >
+          <Text style={s.bigT}>＋ 새로 읽기</Text>
+          <Text style={s.bigSub}>아래에서 글 고르기</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* 저장된 글 — 카테고리 원형 트리 */}
+      <View style={s.headerRow}>
+        <Text style={s.h2}>저장된 글</Text>
+        <TouchableOpacity style={[s.btn, s.primary]} onPress={() => setAdding(true)}>
+          <Text style={[s.btnT, { color: '#fff' }]}>＋ 글 저장</Text>
+        </TouchableOpacity>
+      </View>
+      {groups.length === 0 && <Text style={s.muted}>저장된 글이 없어요.</Text>}
+      {groups.map((g) => {
+        const open = expanded.has(g.cat.name)
+        return (
+          <View key={g.cat.name} style={s.treeNode}>
+            <TouchableOpacity
+              style={s.treeHead}
+              onPress={() => {
+                const n = new Set(expanded)
+                open ? n.delete(g.cat.name) : n.add(g.cat.name)
+                setExpanded(n)
+              }}
+            >
+              <View style={[s.circle, { backgroundColor: g.cat.color }]} />
+              <Text style={s.treeEmoji}>{g.cat.emoji}</Text>
+              <Text style={s.treeName}>{g.cat.name}</Text>
+              <Text style={s.treeCount}>{g.items.length}개</Text>
+              <Text style={s.treeChev}>{open ? '▾' : '▸'}</Text>
+            </TouchableOpacity>
+            {open &&
+              g.items.map((t) => (
+                <TouchableOpacity
+                  key={t.id}
+                  style={[s.treeItem, { borderLeftColor: g.cat.color }]}
+                  onPress={() => setOptText(t)}
+                >
+                  <Text style={s.treeItemTitle}>{t.title || '(제목 없음)'}</Text>
+                  <Text style={s.muted} numberOfLines={1}>
+                    {t.body.slice(0, 40)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+          </View>
+        )
+      })}
 
       {/* 내 기록 */}
       <View style={s.statsRow}>
@@ -130,23 +221,6 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
         </Text>
       </View>
 
-      {/* 저장된 글 */}
-      <View style={s.headerRow}>
-        <Text style={s.h2}>저장된 글</Text>
-        <TouchableOpacity style={[s.btn, s.primary]} onPress={() => setAdding(true)}>
-          <Text style={[s.btnT, { color: '#fff' }]}>＋ 글 저장</Text>
-        </TouchableOpacity>
-      </View>
-      {texts.length === 0 && <Text style={s.muted}>저장된 글이 없어요.</Text>}
-      {texts.map((t) => (
-        <TouchableOpacity key={t.id} style={s.textRow} onPress={() => setOptText(t)}>
-          <Text style={s.textTitle}>{t.title || '(제목 없음)'}</Text>
-          <Text style={s.muted} numberOfLines={1}>
-            {t.body.slice(0, 40)}
-          </Text>
-        </TouchableOpacity>
-      ))}
-
       {/* 읽기 옵션 팝업 */}
       <Modal visible={!!optText} transparent animationType="fade" onRequestClose={() => setOptText(null)}>
         <View style={s.overlay}>
@@ -194,20 +268,7 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
                 onPress={() => {
                   const t = optText!
                   setOptText(null)
-                  const o: ReadOpts = { speedMult: speed, fontSize: font, lineSpacing: lineSpace }
-                  // 기본값을 서버에 저장(다음에도 적용)
-                  const base = baseSettings ?? {
-                    theme: 'dark',
-                    fontPt: font,
-                    linesPerPage: 4,
-                    speedMult: speed,
-                    timerMin: 10,
-                    lineSpacing: lineSpace,
-                  }
-                  void api
-                    .saveSettings({ ...base, fontPt: font, speedMult: speed, lineSpacing: lineSpace })
-                    .catch(() => {})
-                  nav.toRead(t, o)
+                  startRead(t)
                 }}
               >
                 <Text style={[s.btnT, { color: '#fff' }]}>시작 ▶</Text>
@@ -217,6 +278,7 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
         </View>
       </Modal>
 
+      {/* 글 저장 (카테고리 선택 포함) */}
       <Modal visible={adding} transparent animationType="slide" onRequestClose={() => setAdding(false)}>
         <View style={s.overlay}>
           <View style={s.modalBox}>
@@ -229,14 +291,28 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
               placeholderTextColor={COLORS.muted}
             />
             <TextInput
-              style={[s.input, { height: 160, textAlignVertical: 'top' }]}
+              style={[s.input, { height: 140, textAlignVertical: 'top' }]}
               value={body}
               onChangeText={setBody}
               placeholder="여기에 글을 붙여넣어요"
               placeholderTextColor={COLORS.muted}
               multiline
             />
-            <View style={s.row}>
+            <Text style={s.optLabel}>종류</Text>
+            <View style={s.chips}>
+              {CATEGORIES.map((c) => (
+                <TouchableOpacity
+                  key={c.name}
+                  style={[s.chip, saveCat === c.name && s.chipSel]}
+                  onPress={() => setSaveCat(c.name)}
+                >
+                  <Text style={[s.chipT, saveCat === c.name && { color: '#fff' }]}>
+                    {c.emoji} {c.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <View style={[s.row, { justifyContent: 'flex-end' }]}>
               <TouchableOpacity style={s.btn} onPress={() => setAdding(false)}>
                 <Text style={s.btnT}>취소</Text>
               </TouchableOpacity>
@@ -244,7 +320,7 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
                 style={[s.btn, s.primary]}
                 onPress={async () => {
                   if (!body.trim()) return
-                  await api.saveText(title.trim() || body.slice(0, 20), body, null)
+                  await api.saveText(title.trim() || body.slice(0, 20), body, saveCat)
                   setTitle('')
                   setBody('')
                   setAdding(false)
@@ -277,6 +353,10 @@ const s = StyleSheet.create({
   h2: { color: COLORS.fg, fontSize: 20, fontWeight: '800' },
   muted: { color: COLORS.muted, fontSize: 14 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  actions: { flexDirection: 'row', gap: 12 },
+  bigBtn: { flex: 1, backgroundColor: COLORS.panel, borderRadius: 16, padding: 16, gap: 4 },
+  bigT: { color: COLORS.fg, fontSize: 18, fontWeight: '800' },
+  bigSub: { color: COLORS.muted, fontSize: 13 },
   statsRow: { flexDirection: 'row', gap: 10 },
   stat: { flex: 1, backgroundColor: COLORS.panel, borderRadius: 14, padding: 12, alignItems: 'center' },
   statN: { color: COLORS.fg, fontSize: 24, fontWeight: '800' },
@@ -296,13 +376,22 @@ const s = StyleSheet.create({
   lbarFill: { height: '100%', backgroundColor: COLORS.accent, borderRadius: 999 },
   lval: { width: 48, textAlign: 'right', color: COLORS.fg, fontWeight: '800' },
   cheer: { color: COLORS.fg, fontSize: 15, marginTop: 4 },
-  textRow: { backgroundColor: COLORS.panel, borderRadius: 12, padding: 14, gap: 2 },
-  textTitle: { color: COLORS.fg, fontSize: 16, fontWeight: '700' },
+  // 트리
+  treeNode: { backgroundColor: COLORS.panel, borderRadius: 14, overflow: 'hidden' },
+  treeHead: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14 },
+  circle: { width: 22, height: 22, borderRadius: 11 },
+  treeEmoji: { fontSize: 18 },
+  treeName: { color: COLORS.fg, fontSize: 16, fontWeight: '800' },
+  treeCount: { color: COLORS.muted, fontSize: 13 },
+  treeChev: { marginLeft: 'auto', color: COLORS.muted, fontSize: 16 },
+  treeItem: { backgroundColor: COLORS.bg, marginHorizontal: 12, marginBottom: 10, padding: 12, borderRadius: 10, borderLeftWidth: 5, gap: 2 },
+  treeItemTitle: { color: COLORS.fg, fontSize: 16, fontWeight: '700' },
   btn: { backgroundColor: COLORS.panel, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 16 },
   btnT: { color: COLORS.fg, fontSize: 15, fontWeight: '700' },
+  btnDisabled: { opacity: 0.5 },
   primary: { backgroundColor: COLORS.accent },
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.55)', alignItems: 'center', justifyContent: 'center' },
-  modalBox: { backgroundColor: COLORS.panel, borderRadius: 20, padding: 24, gap: 14, width: 380 },
+  modalBox: { backgroundColor: COLORS.panel, borderRadius: 20, padding: 24, gap: 14, width: 420 },
   input: { backgroundColor: COLORS.bg, color: COLORS.fg, borderRadius: 12, padding: 14, fontSize: 16 },
   optLabel: { color: COLORS.muted, fontSize: 14, fontWeight: '700', marginTop: 4 },
 })

@@ -21,6 +21,25 @@ export function createApp(db) {
     res.json(rows)
   })
 
+  // 사용자 삭제(관리자 PIN 필요) — 해당 사용자의 글·세션·설정·진행도 함께 삭제
+  app.delete('/api/users/:id', (req, res) => {
+    const adminPin = req.body?.adminPin ?? req.get('x-admin-pin')
+    if (String(adminPin ?? '') !== String(process.env.ADMIN_PIN ?? '0000')) {
+      return res.status(401).json({ error: 'wrong admin pin' })
+    }
+    const id = Number(req.params.id)
+    if (!Number.isInteger(id)) return res.status(400).json({ error: 'bad id' })
+    const tx = db.transaction(() => {
+      db.prepare('DELETE FROM sessions WHERE user_id=?').run(id)
+      db.prepare('DELETE FROM texts WHERE user_id=?').run(id)
+      db.prepare('DELETE FROM user_settings WHERE user_id=?').run(id)
+      db.prepare('DELETE FROM reading_progress WHERE user_id=?').run(id)
+      db.prepare('DELETE FROM users WHERE id=?').run(id)
+    })
+    tx()
+    res.json({ ok: true })
+  })
+
   // 등록(별명+아바타+4자리 PIN)
   app.post('/api/auth/register', (req, res) => {
     const { name, avatar, pin } = req.body || {}
@@ -112,6 +131,28 @@ export function createApp(db) {
          theme=@theme, font_pt=@fontPt, lines_per_page=@linesPerPage,
          speed_mult=@speedMult, timer_min=@timerMin, line_spacing=@lineSpacing`,
     ).run({ u: req.userId, ...s })
+    res.json({ ok: true })
+  })
+
+  // 이어서 읽기(진행도) — 사용자별 1건
+  app.get('/api/me/progress', authMiddleware, (req, res) => {
+    const r = db
+      .prepare('SELECT text_id AS textId, chars_read AS charsRead, title FROM reading_progress WHERE user_id=?')
+      .get(req.userId)
+    res.json(r ?? null)
+  })
+  app.put('/api/me/progress', authMiddleware, (req, res) => {
+    const { textId, charsRead, title } = req.body || {}
+    if (textId == null) {
+      db.prepare('DELETE FROM reading_progress WHERE user_id=?').run(req.userId) // 완독/초기화
+      return res.json({ ok: true })
+    }
+    db.prepare(
+      `INSERT INTO reading_progress(user_id, text_id, chars_read, title, updated_at)
+       VALUES (@u, @t, @c, @title, @now)
+       ON CONFLICT(user_id) DO UPDATE SET
+         text_id=@t, chars_read=@c, title=@title, updated_at=@now`,
+    ).run({ u: req.userId, t: textId, c: charsRead | 0, title: title ?? '', now: new Date().toISOString() })
     res.json({ ok: true })
   })
 

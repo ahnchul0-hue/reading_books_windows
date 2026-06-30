@@ -44,6 +44,26 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
     statSessions = (await api.session.recent(profile.id)).map((s) => ({ startedAt: s.startedAt, activeMs: s.activeMs }))
   }
 
+  // 이어서 읽기: 진행도(온라인=서버, 오프라인=로컬 상태)
+  let progress: { textId: number; charsRead: number; title: string } | null = null
+  if (online) {
+    try {
+      progress = await api.cloud.progressGet()
+    } catch {
+      progress = null
+    }
+  } else {
+    const rs = await api.state.get(profile.id)
+    if (rs && !rs.finished && rs.textId != null) {
+      progress = {
+        textId: rs.textId,
+        charsRead: rs.charsRead,
+        title: texts.find((t) => t.id === rs.textId)?.title ?? '',
+      }
+    }
+  }
+  const resumeText = progress ? texts.find((t) => t.id === progress!.textId) : undefined
+
   const now = new Date()
   const todayKey = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
   const active = activeDateSet(statSessions.map((s) => s.startedAt))
@@ -64,7 +84,10 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
           <button class="btn" id="home">친구 바꾸기</button>
         </div>
       </div>
-      <button class="btn btn-primary btn-lg" id="start">▶ 읽기 시작</button>
+      <div class="main-actions">
+        <button class="btn btn-primary btn-lg" id="resume"${resumeText ? '' : ' disabled'}>▶ 이어서 읽기<span class="sub">${resumeText ? esc(resumeText.title || '제목 없음') : '최근 읽던 글 없음'}</span></button>
+        <button class="btn btn-lg" id="newread">＋ 새로 읽기</button>
+      </div>
       <div class="dash-grid">
         <div class="stat"><div class="stat-num">🔥 ${streak}</div><div class="stat-lbl">연속 일수</div></div>
         <div class="stat"><div class="stat-num">${weekMin}<span class="unit">분</span></div><div class="stat-lbl">이번 주</div></div>
@@ -83,44 +106,30 @@ export async function renderDashboardScreen(ctx: AppContext): Promise<void> {
           <button class="btn" id="open">📂 파일 열기</button>
         </div>
       </div>
-      <div class="cat-filter" id="filter"></div>
       <div id="composer"></div>
-      <div class="text-grid" id="texts"></div>
+      <div class="cat-tree" id="tree"></div>
     </section>`
 
   renderCalendar(root.querySelector('#cal') as HTMLElement, cal)
   void renderLeaderboard(root.querySelector('#leader') as HTMLElement, ctx)
 
-  // 카테고리 필터 칩
-  let filterId: number | null = null
-  const filterEl = root.querySelector('#filter') as HTMLElement
-  const textsEl = root.querySelector('#texts') as HTMLElement
-  const drawFilter = () => {
-    filterEl.innerHTML = ''
-    const all = chip('전체', '', filterId === null, () => {
-      filterId = null
-      drawFilter()
-      renderTexts(textsEl, texts, filterId, ctx)
-    })
-    filterEl.appendChild(all)
-    for (const c of cats) {
-      const used = texts.some((t) => (t.categoryId ?? null) === c.id)
-      if (!used) continue
-      const el = chip(`${c.emoji} ${c.name}`, c.color, filterId === c.id, () => {
-        filterId = c.id
-        drawFilter()
-        renderTexts(textsEl, texts, filterId, ctx)
-      })
-      filterEl.appendChild(el)
-    }
-  }
-  drawFilter()
-  renderTexts(textsEl, texts, filterId, ctx)
+  // 저장된 글: 카테고리 원형 트리
+  const treeEl = root.querySelector('#tree') as HTMLElement
+  renderTree(treeEl, texts, cats, ctx)
 
   // 이벤트
   ;(root.querySelector('#home') as HTMLElement).addEventListener('click', () => nav.toProfile())
   ;(root.querySelector('#settings') as HTMLElement).addEventListener('click', () => nav.toSettings())
-  ;(root.querySelector('#start') as HTMLElement).addEventListener('click', () => nav.toStart())
+  ;(root.querySelector('#newread') as HTMLElement).addEventListener('click', () => {
+    treeEl.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  })
+  ;(root.querySelector('#resume') as HTMLElement).addEventListener('click', () => {
+    if (!resumeText || !progress) return
+    state.text = { id: resumeText.id, title: resumeText.title, body: resumeText.body }
+    state.queue = []
+    state.resumeChars = progress.charsRead
+    nav.toReading()
+  })
   const composerEl = root.querySelector('#composer') as HTMLElement
   ;(root.querySelector('#compose') as HTMLElement).addEventListener('click', () =>
     openComposer(ctx, composerEl, cats, { title: '', body: '' }),
@@ -221,59 +230,77 @@ async function renderLeaderboard(host: HTMLElement, ctx: AppContext): Promise<vo
   draw()
 }
 
-function renderTexts(
-  grid: HTMLElement,
-  texts: TextItem[],
-  filterId: number | null,
-  ctx: AppContext,
-): void {
-  const { state, nav } = ctx
-  grid.innerHTML = ''
-  const shown = filterId === null ? texts : texts.filter((t) => (t.categoryId ?? null) === filterId)
-  if (shown.length === 0) {
-    grid.innerHTML = `<p class="muted">글이 없어요. “＋ 글 저장” 또는 “파일 열기”로 추가해요.</p>`
+function renderTree(host: HTMLElement, texts: TextItem[], cats: Category[], ctx: AppContext): void {
+  host.innerHTML = ''
+  if (texts.length === 0) {
+    host.innerHTML = `<p class="muted">글이 없어요. “＋ 글 저장” 또는 “파일 열기”로 추가해요.</p>`
     return
   }
-  for (const t of shown) {
-    const color = t.category?.color ?? '#60a5fa'
-    const emoji = t.category?.emoji ?? '✏️'
-    const card = document.createElement('div')
-    card.className = 'text-card'
-    const thumb = document.createElement('div')
-    thumb.className = 'text-thumb'
-    thumb.style.borderTop = `5px solid ${color}`
-    const badge = document.createElement('span')
-    badge.className = 'cat-badge'
-    badge.textContent = emoji
-    const preview = document.createElement('div')
-    preview.className = 'thumb-text'
-    preview.textContent = t.body.slice(0, 60)
-    thumb.append(badge, preview)
-    const title = document.createElement('div')
-    title.className = 'text-title'
-    title.textContent = t.title || '(제목 없음)'
-    card.append(thumb, title)
-    card.addEventListener('click', async () => {
-      state.text = { id: t.id, title: t.title, body: t.body }
-      state.queue = []
-      state.resumeChars = 0
-      const go = await showOptionsPopup(ctx)
-      if (!go) return
-      // 글자수 vs 시간: 글이 짧으면 다음 글을 고르도록 안내
-      const settings = state.settings
-      if (settings) {
-        const estMs = countableLength(t.body) * msPerChar(settings.speedMult)
-        const timerMs = settings.timerMin * 60000
-        if (estMs < timerMs * 0.9) {
-          const remainSec = Math.round((timerMs - estMs) / 1000)
-          const others = texts.filter((x) => x.id !== t.id)
-          state.queue = await showPickMorePopup(ctx, others, remainSec)
-        }
-      }
-      nav.toReading()
-    })
-    grid.appendChild(card)
+  const groups: { name: string; emoji: string; color: string; items: TextItem[] }[] = []
+  for (const c of cats) {
+    const items = texts.filter((t) => (t.categoryId ?? null) === c.id)
+    if (items.length) groups.push({ name: c.name, emoji: c.emoji, color: c.color, items })
   }
+  const uncat = texts.filter((t) => (t.categoryId ?? null) === null)
+  if (uncat.length) groups.push({ name: '기타', emoji: '✨', color: '#9ca3af', items: uncat })
+
+  for (const g of groups) {
+    const node = document.createElement('div')
+    node.className = 'tree-node'
+    const head = document.createElement('button')
+    head.className = 'tree-head'
+    head.innerHTML = `<span class="tree-circle"></span><span class="tree-emoji"></span><span class="tree-name"></span><span class="tree-count"></span><span class="tree-chev">▸</span>`
+    ;(head.querySelector('.tree-circle') as HTMLElement).style.background = g.color
+    ;(head.querySelector('.tree-emoji') as HTMLElement).textContent = g.emoji
+    ;(head.querySelector('.tree-name') as HTMLElement).textContent = g.name
+    ;(head.querySelector('.tree-count') as HTMLElement).textContent = `${g.items.length}개`
+    const body = document.createElement('div')
+    body.className = 'tree-body'
+    body.style.display = 'none'
+    let open = false
+    head.addEventListener('click', () => {
+      open = !open
+      body.style.display = open ? 'block' : 'none'
+      ;(head.querySelector('.tree-chev') as HTMLElement).textContent = open ? '▾' : '▸'
+    })
+    for (const t of g.items) {
+      const item = document.createElement('div')
+      item.className = 'tree-item'
+      item.style.borderLeft = `5px solid ${g.color}`
+      const title = document.createElement('div')
+      title.className = 'tree-item-title'
+      title.textContent = t.title || '(제목 없음)'
+      const prev = document.createElement('div')
+      prev.className = 'tree-item-prev'
+      prev.textContent = t.body.slice(0, 50)
+      item.append(title, prev)
+      item.addEventListener('click', () => void startNewRead(ctx, t, texts))
+      body.appendChild(item)
+    }
+    node.append(head, body)
+    host.appendChild(node)
+  }
+}
+
+async function startNewRead(ctx: AppContext, t: TextItem, texts: TextItem[]): Promise<void> {
+  const { state, nav } = ctx
+  state.text = { id: t.id, title: t.title, body: t.body }
+  state.queue = []
+  state.resumeChars = 0
+  const go = await showOptionsPopup(ctx)
+  if (!go) return
+  // 글자수 vs 시간: 글이 짧으면 다음 글을 고르도록 안내
+  const settings = state.settings
+  if (settings) {
+    const estMs = countableLength(t.body) * msPerChar(settings.speedMult)
+    const timerMs = settings.timerMin * 60000
+    if (estMs < timerMs * 0.9) {
+      const remainSec = Math.round((timerMs - estMs) / 1000)
+      const others = texts.filter((x) => x.id !== t.id)
+      state.queue = await showPickMorePopup(ctx, others, remainSec)
+    }
+  }
+  nav.toReading()
 }
 
 function openComposer(

@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs'
 import { IPC } from '../shared/ipc-contract'
 import type { Settings, SessionProgress, ReadingState } from '../shared/types'
 import type { Service } from './service'
-import type { CloudSession } from '../shared/types'
+import type { CloudSession, ReadingProgress } from '../shared/types'
 import { parseTxt } from './importTxt'
 import { cloud } from './cloud'
 
@@ -76,4 +76,7 @@ export function registerIpc(service: Service): void {
   ipcMain.handle(IPC.cloudSettingsGet, () => cloud.settingsGet())
   ipcMain.handle(IPC.cloudSettingsSet, (_e, s: Settings) => cloud.settingsSave(s))
   ipcMain.handle(IPC.cloudLeaderboard, () => cloud.leaderboard())
+  ipcMain.handle(IPC.cloudDeleteUser, (_e, id: number, adminPin: string) => cloud.deleteUser(id, adminPin))
+  ipcMain.handle(IPC.cloudProgressGet, () => cloud.progressGet())
+  ipcMain.handle(IPC.cloudProgressSet, (_e, p: ReadingProgress | { textId: null }) => cloud.progressSave(p))
 }

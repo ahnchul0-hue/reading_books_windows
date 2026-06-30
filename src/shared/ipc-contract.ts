@@ -15,6 +15,7 @@ import type {
   CloudTextRow,
   CloudDaySession,
   LeaderRow,
+  ReadingProgress,
 } from './types'
 
 /** IPC 채널 이름. preload와 ipc.ts가 함께 참조. */
@@ -51,6 +52,9 @@ export const IPC = {
   cloudSettingsGet: 'cloud:settings:get',
   cloudSettingsSet: 'cloud:settings:set',
   cloudLeaderboard: 'cloud:leaderboard',
+  cloudDeleteUser: 'cloud:users:delete',
+  cloudProgressGet: 'cloud:progress:get',
+  cloudProgressSet: 'cloud:progress:set',
 } as const
 
 /** renderer에서 window.api로 접근하는 안전한 API 표면. */
@@ -102,5 +106,8 @@ export interface Api {
     settingsGet(): Promise<Settings>
     settingsSave(s: Settings): Promise<{ ok: boolean }>
     leaderboard(): Promise<LeaderRow[]>
+    deleteUser(id: number, adminPin: string): Promise<{ ok: boolean }>
+    progressGet(): Promise<ReadingProgress | null>
+    progressSave(p: ReadingProgress | { textId: null }): Promise<{ ok: boolean }>
   }
 }

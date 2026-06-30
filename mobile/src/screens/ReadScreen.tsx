@@ -43,6 +43,8 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
   const [idx, setIdx] = useState(0)
   const [playing, setPlaying] = useState(true)
   const [done, setDone] = useState(false)
+  const [ready, setReady] = useState(false)
+  const resumedRef = useRef(false)
 
   const barX = useRef(new Animated.Value(0)).current
   const anim = useRef<Animated.CompositeAnimation | null>(null)
@@ -63,10 +65,48 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
     } catch {
       /* 오프라인 */
     }
+    try {
+      await api.saveProgress({ textId: null }) // 완독 → 이어읽기 비움
+    } catch {
+      /* 오프라인 */
+    }
   }
 
+  const exitSave = async () => {
+    try {
+      await api.saveProgress({ textId: text.id, charsRead: charsRead.current, title: text.title })
+    } catch {
+      /* 오프라인 */
+    }
+    nav.toHome()
+  }
+
+  // 이어읽기: 저장된 글자수까지 건너뛰고 시작
   useEffect(() => {
-    if (!playing || done || lines.length === 0 || cw === 0) return
+    if (resumedRef.current || lines.length === 0) return
+    resumedRef.current = true
+    const target = opts.resumeChars ?? 0
+    if (target > 0) {
+      let acc = 0
+      let start = 0
+      for (let i = 0; i < lines.length; i++) {
+        const c = countable(lines[i])
+        if (acc + c > target) {
+          start = i
+          break
+        }
+        acc += c
+        start = Math.min(i + 1, lines.length - 1)
+      }
+      charsRead.current = acc
+      setIdx(start)
+    }
+    setReady(true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines.length])
+
+  useEffect(() => {
+    if (!ready || !playing || done || lines.length === 0 || cw === 0) return
     if (idx >= lines.length) {
       void finish()
       return
@@ -107,7 +147,7 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
         <Text style={s.muted}>
           {Math.min(idx + 1, lines.length || 1)} / {lines.length || '…'} 줄
         </Text>
-        <TouchableOpacity onPress={() => nav.toHome()}>
+        <TouchableOpacity onPress={() => void exitSave()}>
           <Text style={s.muted}>끝내기</Text>
         </TouchableOpacity>
       </View>

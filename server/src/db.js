@@ -37,6 +37,14 @@ CREATE TABLE IF NOT EXISTS user_settings (
   line_spacing REAL DEFAULT 1.6,
   FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
+CREATE TABLE IF NOT EXISTS reading_progress (
+  user_id INTEGER PRIMARY KEY,
+  text_id INTEGER,
+  chars_read INTEGER DEFAULT 0,
+  title TEXT,
+  updated_at TEXT,
+  FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);
 `
 
 export function createDb(file = ':memory:') {

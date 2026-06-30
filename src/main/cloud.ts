@@ -10,6 +10,7 @@ import type {
   CloudDaySession,
   LeaderRow,
   Settings,
+  ReadingProgress,
 } from '../shared/types'
 
 const DEFAULT_URL = 'https://reading.metabiz.kr'
@@ -81,4 +82,9 @@ export const cloud = {
   settingsGet: () => call<Settings>('/api/settings', { auth: true }),
   settingsSave: (s: Settings) => call<{ ok: boolean }>('/api/settings', { method: 'PUT', auth: true, body: s }),
   leaderboard: () => call<LeaderRow[]>('/api/leaderboard'),
+  deleteUser: (id: number, adminPin: string) =>
+    call<{ ok: boolean }>(`/api/users/${id}`, { method: 'DELETE', body: { adminPin } }),
+  progressGet: () => call<ReadingProgress | null>('/api/me/progress', { auth: true }),
+  progressSave: (p: ReadingProgress | { textId: null }) =>
+    call<{ ok: boolean }>('/api/me/progress', { method: 'PUT', auth: true, body: p }),
 }

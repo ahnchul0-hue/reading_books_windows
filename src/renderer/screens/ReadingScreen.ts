@@ -263,6 +263,22 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
     } catch {
       /* 오프라인 */
     }
+    // 서버 진행도(이어서 읽기) — 온라인일 때만. 완독이면 비움.
+    if (state.cloudUserId != null) {
+      try {
+        if (textFinished || currentText.id == null) {
+          await api.cloud.progressSave({ textId: null })
+        } else {
+          await api.cloud.progressSave({
+            textId: currentText.id,
+            charsRead: textCharsConsumed,
+            title: currentText.title,
+          })
+        }
+      } catch {
+        /* 오프라인 */
+      }
+    }
     state.lastSummary = {
       charsRead,
       activeMs: clock.activeMs,
