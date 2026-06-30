@@ -50,18 +50,21 @@ export function makeProfileRepo(db: Db) {
         speedMult: r.speed_mult as SpeedMult,
         timerMin: r.timer_min as TimerMin,
         lineSpacing: r.line_spacing ?? 1.6,
+        soundOn: r.sound_on == null ? true : r.sound_on !== 0,
+        hapticOn: r.haptic_on == null ? true : r.haptic_on !== 0,
       }
     },
 
     /** 설정 저장(upsert, 프로필당 1행). */
     setSettings(profileId: number, s: Settings): void {
       db.prepare(
-        `INSERT INTO settings(profile_id, theme, font_pt, lines_per_page, speed_mult, timer_min, line_spacing)
-         VALUES (@profileId, @theme, @fontPt, @linesPerPage, @speedMult, @timerMin, @lineSpacing)
+        `INSERT INTO settings(profile_id, theme, font_pt, lines_per_page, speed_mult, timer_min, line_spacing, sound_on, haptic_on)
+         VALUES (@profileId, @theme, @fontPt, @linesPerPage, @speedMult, @timerMin, @lineSpacing, @soundOn, @hapticOn)
          ON CONFLICT(profile_id) DO UPDATE SET
            theme=@theme, font_pt=@fontPt, lines_per_page=@linesPerPage,
-           speed_mult=@speedMult, timer_min=@timerMin, line_spacing=@lineSpacing`,
-      ).run({ profileId, ...s })
+           speed_mult=@speedMult, timer_min=@timerMin, line_spacing=@lineSpacing,
+           sound_on=@soundOn, haptic_on=@hapticOn`,
+      ).run({ profileId, ...s, soundOn: s.soundOn ? 1 : 0, hapticOn: s.hapticOn ? 1 : 0 })
     },
   }
 }

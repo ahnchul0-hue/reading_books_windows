@@ -109,6 +109,8 @@ export function createApp(db) {
     speedMult: 1.0,
     timerMin: 10,
     lineSpacing: 1.6,
+    soundOn: true,
+    hapticOn: true,
   }
   app.get('/api/settings', authMiddleware, (req, res) => {
     const r = db.prepare('SELECT * FROM user_settings WHERE user_id=?').get(req.userId)
@@ -120,17 +122,20 @@ export function createApp(db) {
       speedMult: r.speed_mult,
       timerMin: r.timer_min,
       lineSpacing: r.line_spacing,
+      soundOn: r.sound_on == null ? true : r.sound_on !== 0,
+      hapticOn: r.haptic_on == null ? true : r.haptic_on !== 0,
     })
   })
   app.put('/api/settings', authMiddleware, (req, res) => {
     const s = { ...DEFAULT_SETTINGS, ...(req.body || {}) }
     db.prepare(
-      `INSERT INTO user_settings(user_id, theme, font_pt, lines_per_page, speed_mult, timer_min, line_spacing)
-       VALUES (@u, @theme, @fontPt, @linesPerPage, @speedMult, @timerMin, @lineSpacing)
+      `INSERT INTO user_settings(user_id, theme, font_pt, lines_per_page, speed_mult, timer_min, line_spacing, sound_on, haptic_on)
+       VALUES (@u, @theme, @fontPt, @linesPerPage, @speedMult, @timerMin, @lineSpacing, @soundOn, @hapticOn)
        ON CONFLICT(user_id) DO UPDATE SET
          theme=@theme, font_pt=@fontPt, lines_per_page=@linesPerPage,
-         speed_mult=@speedMult, timer_min=@timerMin, line_spacing=@lineSpacing`,
-    ).run({ u: req.userId, ...s })
+         speed_mult=@speedMult, timer_min=@timerMin, line_spacing=@lineSpacing,
+         sound_on=@soundOn, haptic_on=@hapticOn`,
+    ).run({ u: req.userId, ...s, soundOn: s.soundOn ? 1 : 0, hapticOn: s.hapticOn ? 1 : 0 })
     res.json({ ok: true })
   })
 

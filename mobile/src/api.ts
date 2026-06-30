@@ -25,6 +25,8 @@ export type Settings = {
   speedMult: number
   timerMin: number
   lineSpacing: number
+  soundOn: boolean
+  hapticOn: boolean
 }
 
 export async function getUrl(): Promise<string> {

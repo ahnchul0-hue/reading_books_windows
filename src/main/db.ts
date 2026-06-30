@@ -120,4 +120,11 @@ export function migrate(db: Db): void {
     db.exec(`ALTER TABLE settings ADD COLUMN line_spacing REAL DEFAULT 1.6;`)
     db.pragma('user_version = 4')
   }
+  if (version < 5) {
+    db.exec(
+      `ALTER TABLE settings ADD COLUMN sound_on INTEGER DEFAULT 1;
+       ALTER TABLE settings ADD COLUMN haptic_on INTEGER DEFAULT 1;`,
+    )
+    db.pragma('user_version = 5')
+  }
 }

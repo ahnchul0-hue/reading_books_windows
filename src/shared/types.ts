@@ -19,6 +19,8 @@ export interface Settings {
   speedMult: SpeedMult
   timerMin: TimerMin
   lineSpacing: number // 줄간격(line-height 배수)
+  soundOn: boolean // 효과음(딩동)
+  hapticOn: boolean // 햅틱(iPad 전용, 데스크톱은 무시)
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -28,6 +30,8 @@ export const DEFAULT_SETTINGS: Settings = {
   speedMult: 1.0,
   timerMin: 10,
   lineSpacing: 1.6,
+  soundOn: true,
+  hapticOn: true,
 }
 
 export interface Category {

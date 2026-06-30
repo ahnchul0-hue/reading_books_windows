@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
   speed_mult REAL DEFAULT 1.0,
   timer_min INTEGER DEFAULT 10,
   line_spacing REAL DEFAULT 1.6,
+  sound_on INTEGER DEFAULT 1,
+  haptic_on INTEGER DEFAULT 1,
   FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS reading_progress (
@@ -52,5 +54,16 @@ export function createDb(file = ':memory:') {
   db.pragma('journal_mode = WAL')
   db.pragma('foreign_keys = ON')
   db.exec(SCHEMA)
+  // 기존 DB 보강(컬럼 추가) — 이미 있으면 무시
+  for (const sql of [
+    'ALTER TABLE user_settings ADD COLUMN sound_on INTEGER DEFAULT 1',
+    'ALTER TABLE user_settings ADD COLUMN haptic_on INTEGER DEFAULT 1',
+  ]) {
+    try {
+      db.exec(sql)
+    } catch {
+      /* 이미 존재 */
+    }
+  }
   return db
 }

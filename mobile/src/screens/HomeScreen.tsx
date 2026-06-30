@@ -89,6 +89,8 @@ export function HomeScreen({ nav, user }: { nav: Nav; user: CloudUser }) {
       speedMult: speed,
       timerMin: 10,
       lineSpacing: lineSpace,
+      soundOn: true,
+      hapticOn: true,
     }
     void api.saveSettings({ ...base, fontPt: font, speedMult: speed, lineSpacing: lineSpace }).catch(() => {})
     nav.toRead(t, o)
