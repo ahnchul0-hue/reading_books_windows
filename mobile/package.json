@@ -7,7 +7,7 @@
     "start": "expo start",
     "ios": "expo start --ios",
     "tunnel": "expo start --tunnel",
-    "start:domain": "expo start --port 8443"
+    "start:domain": "cross-env REACT_NATIVE_PACKAGER_HOSTNAME=reading-app.metabiz.kr expo start --port 8080"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
