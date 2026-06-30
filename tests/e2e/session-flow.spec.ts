@@ -1,5 +1,5 @@
 import { test, expect, _electron as electron, type Page } from '@playwright/test'
-import { mkdtempSync } from 'node:fs'
+import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -11,10 +11,23 @@ const STORY =
 
 async function launch() {
   const userDataDir = mkdtempSync(join(tmpdir(), 'rt-e2e-'))
+  // 도달 불가 서버 주소 → 오프라인(로컬) 홈으로 강제 (PIN 없는 흐름)
+  writeFileSync(join(userDataDir, 'cloud-config.json'), JSON.stringify({ serverUrl: 'http://127.0.0.1:9' }))
   const app = await electron.launch({ args: ['.', `--user-data-dir=${userDataDir}`] })
   const win = await app.firstWindow()
   await win.waitForSelector('text=읽기 친구들')
   return { app, win }
+}
+
+// 대시보드에서 글을 골라 읽기 화면까지 진입 (카테고리 트리 → 옵션 팝업)
+async function openReading(win: Page): Promise<void> {
+  await win.locator('.tree-head', { hasText: '내 글' }).click()
+  await win.locator('.tree-item').first().click()
+  await win.click('#go') // 옵션 팝업 "시작"
+  await win
+    .locator('#skip')
+    .click({ timeout: 3000 })
+    .catch(() => {}) // 글이 짧으면 뜨는 "다음 글" 팝업 → 그냥 시작
 }
 
 async function makeProfileAndText(win: Page): Promise<void> {
@@ -28,10 +41,7 @@ async function makeProfileAndText(win: Page): Promise<void> {
   await win.fill('#ctitle', '이야기')
   await win.fill('#cbody', STORY)
   await win.click('#csave')
-  await win.waitForSelector('.text-card')
-  // 읽기 시작 → 새로 읽기(글 자동 선택)
-  await win.click('#start')
-  await win.waitForSelector('text=무엇을 읽을까요?')
+  await win.waitForSelector('.tree-head') // 대시보드 카테고리 트리
 }
 
 const transform = (win: Page) =>
@@ -49,7 +59,7 @@ test('전체 흐름: 읽기 → 스윕 이동 → 강제 휴식(스킵 불가) �
       breakMs: 1000,
     }
   })
-  await win.click('#go')
+  await openReading(win)
 
   // 스윕 바 등장 + 이동
   await expect(win.locator('.sweep-bar')).toBeVisible()
@@ -82,7 +92,7 @@ test('일시정지/재개: 멈춤 중 막대 정지, 재개 시 다시 이동', 
       breakIntervalMs: 9_999_999,
     }
   })
-  await win.click('#go')
+  await openReading(win)
   await expect(win.locator('.sweep-bar')).toBeVisible()
   await win.waitForTimeout(500)
 
