@@ -5,7 +5,9 @@
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
     "start": "expo start",
-    "ios": "expo start --ios"
+    "ios": "expo start --ios",
+    "tunnel": "expo start --tunnel",
+    "start:domain": "cross-env REACT_NATIVE_PACKAGER_HOSTNAME=reading-app.metabiz.kr expo start --host lan"
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
@@ -19,6 +21,7 @@
   "devDependencies": {
     "@babel/core": "^7.25.0",
     "@types/react": "~19.1.10",
+    "cross-env": "^10.1.0",
     "typescript": "~5.9.2"
   }
 }
