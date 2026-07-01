@@ -52,6 +52,7 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
 
   const barX = useRef(new Animated.Value(0)).current
   const anim = useRef<Animated.CompositeAnimation | null>(null)
+  const widths = useRef<number[]>([]) // 줄별 실제 글자폭(px)
   const activeMs = useRef(0)
   const charsRead = useRef(0)
   const startedAt = useRef(new Date().toISOString())
@@ -119,20 +120,55 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
       return
     }
     scrollRef.current?.scrollTo({ y: Math.max(0, idx * lineH - lineH), animated: true })
-    barX.setValue(0)
-    const dur = Math.max(400, countable(lines[idx]) * msPerChar)
-    const range = Math.max(0, cw - 32 - barW)
-    anim.current = Animated.timing(barX, { toValue: range, duration: dur, useNativeDriver: true })
-    anim.current.start(({ finished }) => {
-      if (finished) {
-        activeMs.current += dur
-        charsRead.current += countable(lines[idx])
-        setIdx((i) => i + 1)
+    // 레이아웃(글자폭 측정) 이후 시작 — 실제 글자 끝까지만, 균일 속도, 문장끝 멈춤
+    const t = setTimeout(() => {
+      const line = lines[idx]
+      const totalCountable = countable(line)
+      const lineW = Math.max(barW + 4, widths.current[idx] ?? cw - 32)
+      const maxX = Math.max(0, lineW - barW)
+      const SENTENCE = /[.?!…]/
+      const segs: { chars: number; ends: boolean }[] = []
+      let segChars = 0
+      for (const ch of [...line]) {
+        if (!/\s/.test(ch)) segChars++
+        if (SENTENCE.test(ch)) {
+          segs.push({ chars: segChars, ends: true })
+          segChars = 0
+        }
       }
-    })
-    return () => anim.current?.stop()
+      if (segChars > 0 || segs.length === 0) segs.push({ chars: segChars, ends: false })
+
+      barX.setValue(0)
+      let cum = 0
+      let dur = 0
+      const anims: Animated.CompositeAnimation[] = []
+      segs.forEach((seg, si) => {
+        const segPx = totalCountable > 0 ? (seg.chars / totalCountable) * maxX : maxX
+        cum = Math.min(maxX, cum + segPx)
+        const d = Math.max(1, seg.chars * msPerChar)
+        dur += d
+        anims.push(Animated.timing(barX, { toValue: cum, duration: d, useNativeDriver: true }))
+        if (seg.ends && si < segs.length - 1) {
+          anims.push(Animated.delay(300)) // 문장 끝 0.3초 멈춤
+          dur += 300
+        }
+      })
+      const seqDur = dur
+      anim.current = Animated.sequence(anims)
+      anim.current.start(({ finished }) => {
+        if (finished) {
+          activeMs.current += seqDur
+          charsRead.current += totalCountable
+          setIdx((i) => i + 1)
+        }
+      })
+    }, 16)
+    return () => {
+      clearTimeout(t)
+      anim.current?.stop()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, playing, lines.length, cw])
+  }, [idx, playing, lines.length, cw, ready])
 
   if (done) {
     return (
@@ -163,7 +199,12 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
         <ScrollView ref={scrollRef} contentContainerStyle={{ padding: 16 }}>
           {lines.map((ln, i) => (
             <View key={i} style={[s.lineRow, { height: lineH }, i === idx && s.lineCur]}>
-              <Text style={{ fontSize, lineHeight: lineH, color: i <= idx ? col.fg : col.muted }}>
+              <Text
+                onLayout={(e) => {
+                  widths.current[i] = e.nativeEvent.layout.width
+                }}
+                style={{ fontSize, lineHeight: lineH, color: i <= idx ? col.fg : col.muted }}
+              >
                 {ln}
               </Text>
               {i === idx && (
@@ -193,7 +234,7 @@ const makeStyles = (col: Colors) =>
   h1: { color: col.fg, fontSize: 26, fontWeight: '800' },
   muted: { color: col.muted, fontSize: 15 },
   box: { flex: 1, backgroundColor: col.panel, borderRadius: 16, borderWidth: 2, borderColor: '#3a4256' },
-  lineRow: { position: 'relative', justifyContent: 'center' },
+  lineRow: { position: 'relative', justifyContent: 'center', alignItems: 'flex-start' },
   lineCur: { backgroundColor: 'rgba(127,127,127,0.16)', borderRadius: 8 }, // 현재 줄 배경(은은)
   bar: { position: 'absolute', left: 0, top: 0, backgroundColor: 'rgba(240,198,116,0.5)', borderRadius: 4 },
   btn: { backgroundColor: col.panel, borderRadius: 14, paddingVertical: 14, alignItems: 'center' },
