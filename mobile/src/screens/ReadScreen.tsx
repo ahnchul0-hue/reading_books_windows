@@ -62,6 +62,8 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
   const lineH = Math.round(fontSize * (opts.lineSpacing || 1.6))
   const charW = fontSize // 한글 한 글자 폭 근사
   const barW = 2 * charW // 약 2글자
+  const barHeight = Math.round(fontSize * 1.15) // 글자 높이 기준(줄간격과 무관)
+  const PAD = 20
   const msPerChar = 60000 / (400 * opts.speedMult)
 
   const [cw, setCw] = useState(0)
@@ -100,12 +102,9 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
     cue.end()
   }
 
-  const exitSave = async () => {
-    try {
-      await api.saveProgress({ textId: text.id, charsRead: charsRead.current, title: text.title })
-    } catch {
-      /* 오프라인 */
-    }
+  const exitSave = () => {
+    // 진행도 저장은 백그라운드로(네트워크가 느려도 즉시 나가지게)
+    api.saveProgress({ textId: text.id, charsRead: charsRead.current, title: text.title }).catch(() => {})
     nav.toHome()
   }
 
@@ -144,7 +143,7 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
   }, [cw, charW, text.body])
 
   // 페이지 단위 렌더(수천 줄을 한 번에 그리지 않음)
-  const pageLines = Math.max(1, Math.floor(((ch || 600) - 32) / lineH))
+  const pageLines = Math.max(1, Math.floor(((ch || 600) - PAD * 2 - 8) / lineH))
   const pageStart = Math.floor(idx / pageLines) * pageLines
   const visible = lines.slice(pageStart, pageStart + pageLines)
 
@@ -223,7 +222,7 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
         <Text style={s.muted}>
           {Math.min(idx + 1, lines.length || 1)} / {lines.length || '…'} 줄
         </Text>
-        <TouchableOpacity onPress={() => void exitSave()}>
+        <TouchableOpacity onPress={() => exitSave()} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
           <Text style={s.muted}>끝내기</Text>
         </TouchableOpacity>
       </View>
@@ -235,7 +234,7 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
           setCh(e.nativeEvent.layout.height)
         }}
       >
-        <View style={{ padding: 16 }}>
+        <View style={{ padding: PAD }}>
           {visible.map((ln, k) => {
             const gi = pageStart + k
             const cur = gi === idx
@@ -251,7 +250,15 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
                 </Text>
                 {cur && (
                   <Animated.View
-                    style={[s.bar, { width: barW, height: lineH, transform: [{ translateX: barX }] }]}
+                    style={[
+                      s.bar,
+                      {
+                        width: barW,
+                        height: barHeight,
+                        top: Math.max(0, (lineH - barHeight) / 2),
+                        transform: [{ translateX: barX }],
+                      },
+                    ]}
                   />
                 )}
               </View>
@@ -265,14 +272,16 @@ export function ReadScreen({ nav, text, opts }: { nav: Nav; text: TextRow; opts:
       </TouchableOpacity>
 
       {/* 불러오는 중 팝업(프로그레스바) */}
-      <Modal visible={loading} transparent animationType="fade">
-        <View style={s.overlay}>
-          <View style={s.loadBox}>
-            <Text style={s.loadT}>📖 글을 준비하고 있어요…</Text>
-            <LoadingBar col={col} />
+      {loading && (
+        <Modal visible transparent animationType="none">
+          <View style={s.overlay}>
+            <View style={s.loadBox}>
+              <Text style={s.loadT}>📖 글을 준비하고 있어요…</Text>
+              <LoadingBar col={col} />
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </View>
   )
 }
@@ -283,7 +292,7 @@ const makeStyles = (col: Colors) =>
     topRow: { flexDirection: 'row', justifyContent: 'space-between' },
     h1: { color: col.fg, fontSize: 26, fontWeight: '800' },
     muted: { color: col.muted, fontSize: 15 },
-    box: { flex: 1, backgroundColor: col.panel, borderRadius: 16, borderWidth: 2, borderColor: '#3a4256' },
+    box: { flex: 1, backgroundColor: col.panel, borderRadius: 16, borderWidth: 2, borderColor: '#3a4256', overflow: 'hidden' },
     lineRow: { position: 'relative', justifyContent: 'center', alignItems: 'flex-start' },
     lineCur: { backgroundColor: 'rgba(127,127,127,0.16)', borderRadius: 8 },
     bar: { position: 'absolute', left: 0, top: 0, backgroundColor: 'rgba(240,198,116,0.5)', borderRadius: 4 },

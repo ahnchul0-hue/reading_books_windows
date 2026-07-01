@@ -240,19 +240,26 @@ export function HomeScreen({ nav, user, onTheme }: { nav: Nav; user: CloudUser; 
             <Text style={s.h2}>📖 {optText?.title || '읽기'}</Text>
             <Text style={s.muted}>어떻게 읽을까요?</Text>
             <Text style={s.optLabel}>속도</Text>
-            <View style={s.chips}>
-              {[0.5, 1.0, 1.5, 2.0].map((v) => (
-                <TouchableOpacity
-                  key={v}
-                  style={[s.chip, speed === v && s.chipSel]}
-                  onPress={() => {
-                    cue.select()
-                    setSpeed(v)
-                  }}
-                >
-                  <Text style={[s.chipT, speed === v && { color: '#fff' }]}>{v.toFixed(1)}×</Text>
-                </TouchableOpacity>
-              ))}
+            <View style={s.row}>
+              <TouchableOpacity
+                style={s.btn}
+                onPress={() => {
+                  cue.select()
+                  setSpeed((v) => Math.max(0.3, Math.round((v - 0.1) * 10) / 10))
+                }}
+              >
+                <Text style={s.btnT}>－</Text>
+              </TouchableOpacity>
+              <Text style={[s.btnT, { minWidth: 64, textAlign: 'center' }]}>{speed.toFixed(1)}×</Text>
+              <TouchableOpacity
+                style={s.btn}
+                onPress={() => {
+                  cue.select()
+                  setSpeed((v) => Math.min(3.0, Math.round((v + 0.1) * 10) / 10))
+                }}
+              >
+                <Text style={s.btnT}>＋</Text>
+              </TouchableOpacity>
             </View>
             <Text style={s.optLabel}>글자 크기</Text>
             <View style={s.row}>
