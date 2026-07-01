@@ -12,10 +12,10 @@ beforeEach(() => {
 })
 
 describe('categoryRepo (migration 0003)', () => {
-  it('기본 6종이 시드된다(색·이모지 포함)', () => {
+  it('기본 7종이 시드된다(색·이모지 포함)', () => {
     const cats = repo.list()
-    expect(cats).toHaveLength(6)
-    expect(cats.map((c) => c.name)).toEqual(['동화', '과학', '동물', '역사', '시·노래', '내 글'])
+    expect(cats).toHaveLength(7)
+    expect(cats.map((c) => c.name)).toEqual(['동화', '과학', '동물', '역사', '시·노래', '내 글', '정보보안 기사'])
     expect(cats[0].emoji).toBe('📖')
     expect(cats[0].color).toMatch(/^#/)
     expect(cats.every((c) => c.builtin)).toBe(true)
@@ -24,15 +24,15 @@ describe('categoryRepo (migration 0003)', () => {
   it('부모가 새 카테고리 추가(builtin=false)', () => {
     const c = repo.add('만화', '📚', '#f87171')
     expect(c.builtin).toBe(false)
-    expect(repo.list()).toHaveLength(7)
+    expect(repo.list()).toHaveLength(8)
   })
 
   it('사용자 카테고리는 삭제, 기본은 보호', () => {
     const c = repo.add('만화', '📚', '#f87171')
     repo.remove(c.id)
-    expect(repo.list()).toHaveLength(6)
+    expect(repo.list()).toHaveLength(7)
     repo.remove(1) // 기본(동화) 삭제 시도 → 무시
-    expect(repo.list()).toHaveLength(6)
+    expect(repo.list()).toHaveLength(7)
   })
 })
 

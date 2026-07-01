@@ -8,6 +8,7 @@ export const CATEGORIES: Cat[] = [
   { name: '역사', emoji: '🏰', color: '#d4a373' },
   { name: '시·노래', emoji: '🎵', color: '#f472b6' },
   { name: '내 글', emoji: '✏️', color: '#60a5fa' },
+  { name: '정보보안 기사', emoji: '🛡️', color: '#22d3ee' },
 ]
 
 export const UNCATEGORIZED: Cat = { name: '기타', emoji: '✨', color: '#9ca3af' }

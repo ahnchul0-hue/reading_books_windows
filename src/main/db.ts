@@ -127,4 +127,13 @@ export function migrate(db: Db): void {
     )
     db.pragma('user_version = 5')
   }
+  if (version < 6) {
+    // 카테고리 "정보보안 기사" 추가(이름 중복 없을 때만, id 자동)
+    db.exec(
+      `INSERT INTO categories(name, emoji, color, builtin, sort)
+       SELECT '정보보안 기사', '🛡️', '#22d3ee', 1, 7
+       WHERE NOT EXISTS (SELECT 1 FROM categories WHERE name='정보보안 기사');`,
+    )
+    db.pragma('user_version = 6')
+  }
 }
