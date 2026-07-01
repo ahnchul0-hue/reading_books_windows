@@ -55,6 +55,12 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
         <button class="btn" id="pause">⏸ 일시정지</button>
         <button class="btn" id="quit">끝내기</button>
       </div>
+      <div class="load-overlay" id="loadov">
+        <div class="load-box">
+          <div class="load-title">📖 글을 준비하고 있어요…</div>
+          <div class="load-bar"><span></span></div>
+        </div>
+      </div>
     </section>`
 
   const pageEl = root.querySelector('#page') as HTMLElement
@@ -64,6 +70,9 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   pageEl.style.position = 'relative'
   pageEl.style.fontSize = `${settings.fontPt}pt`
   pageEl.style.lineHeight = String(settings.lineSpacing) // 줄간격
+
+  // 로딩 팝업이 먼저 그려지도록 한 프레임 양보(긴 글 페이지 계산 전에)
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(null))))
 
   // 글꼴/크기·창 크기 기준 1줄 최대 글자수 추정 → core.paginate (반응형)
   let charWidthPx = measureCharWidth(pageEl)
@@ -391,6 +400,7 @@ export async function renderReadingScreen(ctx: AppContext): Promise<void> {
   renderPage()
   loadLine()
   updateTopUI()
+  root.querySelector('#loadov')?.remove() // 로딩 팝업 닫기
   sound.start() // 시작 효과음
   raf = requestAnimationFrame(frame)
 }

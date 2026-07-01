@@ -216,6 +216,14 @@ input[type="text"] {
 .manage-row .uname { font-weight: 700; }
 .btn-danger { background: #ef4444; color: #fff; }
 
+/* 읽기 로딩 팝업(프로그레스바) */
+.load-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
+.load-box { background: var(--panel); border-radius: 16px; padding: 1.6rem 2rem; min-width: 300px; display: flex; flex-direction: column; gap: 1rem; }
+.load-title { color: var(--fg); font-weight: 800; text-align: center; }
+.load-bar { height: 10px; background: rgba(127,127,127,0.25); border-radius: 5px; overflow: hidden; position: relative; }
+.load-bar > span { position: absolute; top: 0; height: 100%; width: 45%; background: var(--accent); border-radius: 5px; animation: loadslide 0.9s ease-in-out infinite; }
+@keyframes loadslide { 0% { transform: translateX(-120%); } 100% { transform: translateX(260%); } }
+
 /* 대시보드: 이어서/새로 읽기 + 카테고리 트리 */
 .main-actions { display: flex; gap: 1rem; }
 .main-actions .btn-lg { flex: 1; }
